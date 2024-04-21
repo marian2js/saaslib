@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Logger } from '@nestjs/common'
 import {
   Document,
   FilterQuery,
@@ -10,7 +10,6 @@ import {
 } from 'mongoose'
 import { OmitMethods } from 'src/utils/typescript.utils'
 
-@Injectable()
 export abstract class BaseEntityService<T> {
   protected readonly logger: Logger = new Logger(BaseEntityService.name)
 
@@ -28,7 +27,7 @@ export abstract class BaseEntityService<T> {
     return await this.model.find().exec()
   }
 
-  async create(data: OmitMethods<T>): Promise<T> {
+  async create(data: Omit<OmitMethods<T>, '_id'>): Promise<T> {
     const createdDocument = new this.model(data)
     return createdDocument.save() as T
   }
