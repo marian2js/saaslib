@@ -8,7 +8,7 @@ import {
   UpdateQuery,
   UpdateWithAggregationPipeline,
 } from 'mongoose'
-import { OmitMethods } from 'src/utils/typescript.utils'
+import { OmitMethods } from '../utils/typescript.utils'
 
 export abstract class BaseEntityService<T> {
   protected readonly logger: Logger = new Logger(BaseEntityService.name)
@@ -27,7 +27,7 @@ export abstract class BaseEntityService<T> {
     return await this.model.find().exec()
   }
 
-  async create(data: Omit<OmitMethods<T>, '_id'>): Promise<T> {
+  async create(data: Partial<OmitMethods<T>>): Promise<T> {
     const createdDocument = new this.model(data)
     return createdDocument.save() as T
   }
