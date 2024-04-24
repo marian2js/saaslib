@@ -32,11 +32,13 @@ export class BaseAuthService {
   }
 
   generateAccessToken(user: BaseUser): { accessToken: string } {
-    const accessToken = this.jwtService.sign({
-      id: user._id,
-      email: user.email,
-      date: new Date().toISOString(),
-    })
+    const accessToken = this.jwtService.sign(
+      {
+        id: user._id,
+        email: user.email,
+      },
+      { secret: process.env.JWT_SECRET },
+    )
     return {
       accessToken,
     }

@@ -25,8 +25,8 @@ export class BaseAuthController {
     protected baseUserService: BaseUserService,
   ) {}
 
-  @Post('login')
-  async login(@Body('email') email: string, @Body('password') password: string) {
+  @Post('signin')
+  async signIn(@Body('email') email: string, @Body('password') password: string) {
     if (!email || !password) {
       throw new UnauthorizedException('Invalid credentials')
     }
@@ -54,7 +54,8 @@ export class BaseAuthController {
       hashedPassword: await SecurityUtils.hashWithBcrypt(password, 12),
       emailVerified: false,
     })
-    return await this.completeSignUp(newUser)
+    await this.completeSignUp(newUser)
+    return await this.completeSignIn(newUser)
   }
 
   @Post('logout')
@@ -97,7 +98,11 @@ export class BaseAuthController {
     if (!user) {
       throw new NotFoundException('User not found')
     }
-    return isNew ? await this.completeSignUp(user) : await this.completeSignIn(user)
+
+    if (isNew) {
+      await this.completeSignUp(user)
+    }
+    return await this.completeSignIn(user)
   }
 
   async completeSignIn(user: BaseUser) {
@@ -105,14 +110,15 @@ export class BaseAuthController {
       throw new ForbiddenException('User is blocked')
     }
     const plainRefreshToken = await this.baseAuthService.generateAndSaveRefreshToken(user)
+    const token = {
+      ...this.baseAuthService.generateAccessToken(user),
+      refreshToken: plainRefreshToken,
+    }
     return {
       user: {
-        _id: user._id,
+        _id: user._id.toString(),
       },
-      token: {
-        ...this.baseAuthService.generateAccessToken(user),
-        refreshToken: plainRefreshToken,
-      },
+      token,
     }
   }
 
@@ -124,7 +130,5 @@ export class BaseAuthController {
     } else {
       // TODO send verification email
     }
-
-    return await this.completeSignIn(user)
   }
 }
