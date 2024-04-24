@@ -28,28 +28,22 @@ export class BaseUser {
   name?: string
 
   @Prop({})
-  hashedPassword?: string
-
-  @Prop({
-    required: true,
-    default: 0,
-  })
-  passwordAttempt: number
-
-  @Prop({
-    required: true,
-    default: false,
-  })
-  isVerified: boolean
-
-  @Prop({
-    required: true,
-    default: false,
-  })
-  isBlocked: boolean
+  avatar?: string
 
   @Prop({})
-  avatar?: string
+  hashedPassword?: string
+
+  @Prop({})
+  refreshTokenHash?: string
+
+  @Prop({})
+  passwordAttempt?: number
+
+  @Prop({})
+  emailVerified: boolean
+
+  @Prop({})
+  blocked: boolean
 }
 
 export const BaseUserSchema = SchemaFactory.createForClass(BaseUser)

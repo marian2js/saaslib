@@ -56,13 +56,17 @@ export class UserController extends BaseUserController {
 
 ```typescript
 import { Injectable } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import { BaseAuthService } from 'nestjs-saas'
 import { UserService } from '../user.service'
 
 @Injectable()
 export class AuthService extends BaseAuthService {
-  constructor(private userService: UserService) {
-    super(userService)
+  constructor(
+    protected userService: UserService,
+    protected jwtService: JwtService,
+  ) {
+    super(userService, jwtService)
   }
 }
 ```
@@ -72,12 +76,16 @@ export class AuthService extends BaseAuthService {
 ```typescript
 import { Controller } from '@nestjs/common'
 import { BaseAuthController } from 'nestjs-saas'
+import { UserService } from '../user.service'
 import { AuthService } from './auth.service'
 
 @Controller('auth')
 export class AuthController extends BaseAuthController {
-  constructor(private authService: AuthService) {
-    super(authService)
+  constructor(
+    private authService: AuthService,
+    private userService: UserService,
+  ) {
+    super(authService, userService)
   }
 }
 ```
