@@ -6,10 +6,11 @@ import {
   NotFoundException,
   Post,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { Request } from 'express'
+import { Request, Response } from 'express'
 import { Types } from 'mongoose'
 import { SecurityUtils } from '../../utils/security.utils'
 import { BaseUser } from '../base-user.model'
@@ -90,7 +91,7 @@ export class BaseAuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleOauth2Guard)
-  async googleAuthRedirect(@Req() req: Request) {
+  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
     if (!req.user) {
       throw new UnauthorizedException()
     }
@@ -101,6 +102,29 @@ export class BaseAuthController {
 
     if (isNew) {
       await this.completeSignUp(user)
+    }
+    const data = await this.completeSignIn(user)
+
+    if (!process.env.COMPLETE_OAUTH_URL) {
+      return data
+    }
+
+    const oauthCode = this.baseAuthService.generateOAuthCode(user)
+    res.redirect(`${process.env.COMPLETE_OAUTH_URL}?code=${oauthCode}`)
+  }
+
+  @Post('verify-oauth')
+  async verifyAuthCode(@Body('code') code: string) {
+    if (!code) {
+      throw new UnauthorizedException()
+    }
+    const decoded = this.baseAuthService.verifyOAuthCode(code)
+    if (!decoded) {
+      throw new UnauthorizedException()
+    }
+    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(decoded.id) })
+    if (!user) {
+      throw new NotFoundException('User not found')
     }
     return await this.completeSignIn(user)
   }

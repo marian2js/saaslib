@@ -64,4 +64,22 @@ export class BaseAuthService {
       (await SecurityUtils.bcryptHashIsValid(refreshToken, user.refreshTokenHash))
     )
   }
+
+  generateOAuthCode(user: BaseUser): string {
+    const authCode = this.jwtService.sign(
+      {
+        id: user._id,
+      },
+      { secret: process.env.JWT_SECRET, expiresIn: '1 minute' },
+    )
+    return authCode
+  }
+
+  verifyOAuthCode(authCode: string): { id: string } | null {
+    try {
+      return this.jwtService.verify(authCode, { secret: process.env.JWT_SECRET })
+    } catch {
+      return null
+    }
+  }
 }
