@@ -1,7 +1,9 @@
 import { Controller, INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Types } from 'mongoose'
 import { EmailService } from 'src/main'
 import { testModuleImports } from 'src/tests/test.helpers'
+import { SecurityUtils } from 'src/utils/security.utils'
 import * as request from 'supertest'
 import { BaseUserService } from '../../services/base-user.service'
 import { BaseAuthService } from '../services/base-auth.service'
@@ -177,6 +179,63 @@ describe('BaseAuthController', () => {
       const user = await userService.findOne({ email: 'test@example.com' })
 
       await request(app.getHttpServer()).post('/auth/refresh-token').send({ userId: user._id.toString() }).expect(400)
+    })
+  })
+
+  describe('/POST verify-email', () => {
+    it('should verify the email successfully if the code is valid', async () => {
+      const hashedCode = await SecurityUtils.hashWithBcrypt('valid-code', 12)
+      const user = await userService.create({ email: 'test@example.com', emailVerificationCode: hashedCode })
+
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send({ userId: user._id.toString(), code: 'valid-code' })
+        .expect(201)
+        .expect({ ok: true })
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.emailVerified).toBe(true)
+    })
+
+    it('should return not found if user does not exist', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send({ userId: new Types.ObjectId().toString(), code: 'any-code' })
+        .expect(404)
+    })
+
+    it('should succeed if email is already verified', async () => {
+      const user = await userService.create({ email: 'test@example.com', emailVerified: true })
+
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send({ userId: user._id.toString(), code: 'valid-code' })
+        .expect(201)
+    })
+
+    it('should throw unauthorized if the verification code is missing', async () => {
+      const user = await userService.create({ email: 'test@example.com' })
+
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send({ userId: user._id.toString(), code: 'wrong-code' })
+        .expect(401)
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.emailVerified).not.toBeDefined()
+    })
+
+    it('should throw unauthorized if the verification code is invalid', async () => {
+      const hashedCode = await SecurityUtils.hashWithBcrypt('valid-code', 12)
+      const user = await userService.create({ email: 'test@example.com', emailVerificationCode: hashedCode })
+
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send({ userId: user._id.toString(), code: 'invalid-code' })
+        .expect(401)
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.emailVerified).not.toBeDefined()
     })
   })
 

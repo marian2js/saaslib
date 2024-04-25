@@ -17,7 +17,13 @@ import { Types } from 'mongoose'
 import { SecurityUtils } from '../../../utils/security.utils'
 import { BaseUser } from '../../models/base-user.model'
 import { BaseUserService } from '../../services/base-user.service'
-import { RefreshTokenDto, SignInDto, SignUpWithPasswordDto, VerifyAuthCodeDto } from '../dtos/base-auth.dto'
+import {
+  RefreshTokenDto,
+  SignInDto,
+  SignUpWithPasswordDto,
+  VerifyAuthCodeDto,
+  VerifyEmailDto,
+} from '../dtos/base-auth.dto'
 import { GoogleOauth2Guard } from '../guards/google-oauth2.guard'
 import { UserGuard } from '../guards/user.guard'
 import { BaseAuthService, SocialAuthUser } from '../services/base-auth.service'
@@ -122,9 +128,6 @@ export class BaseAuthController {
   @Post('verify-oauth')
   @UsePipes(new ValidationPipe())
   async verifyAuthCode(@Body() { code }: VerifyAuthCodeDto) {
-    if (!code) {
-      throw new UnauthorizedException()
-    }
     const decoded = this.baseAuthService.verifyOAuthCode(code)
     if (!decoded) {
       throw new UnauthorizedException()
@@ -134,6 +137,31 @@ export class BaseAuthController {
       throw new NotFoundException('User not found')
     }
     return await this.completeSignIn(user)
+  }
+
+  @Post('verify-email')
+  @UsePipes(new ValidationPipe())
+  async verifyEmail(@Body() { userId, code }: VerifyEmailDto) {
+    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    if (user.emailVerified) {
+      return { ok: true }
+    }
+    if (!user.emailVerificationCode) {
+      throw new UnauthorizedException()
+    }
+    const codeIsValid = await this.baseAuthService.verifyEmailCode(user, code)
+    if (codeIsValid) {
+      await this.baseUserService.updateOne(
+        { _id: user._id },
+        { emailVerified: true, $unset: { emailVerificationCode: '1' } },
+      )
+      return { ok: true }
+    } else {
+      throw new UnauthorizedException()
+    }
   }
 
   private async completeSignIn(user: BaseUser) {

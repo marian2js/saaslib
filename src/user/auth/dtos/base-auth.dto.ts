@@ -32,3 +32,12 @@ export class VerifyAuthCodeDto {
   @IsString()
   code: string
 }
+
+export class VerifyEmailDto {
+  @IsString()
+  @IsObjectId()
+  userId: string
+
+  @IsString()
+  code: string
+}

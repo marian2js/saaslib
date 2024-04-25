@@ -89,6 +89,10 @@ export class BaseAuthService {
     }
   }
 
+  async verifyEmailCode(user: BaseUser, code: string): Promise<boolean> {
+    return await SecurityUtils.bcryptHashIsValid(code, user.emailVerificationCode)
+  }
+
   async completeSignUp(user: BaseUser) {
     this.logger.log(`Completing sign-up for ${user.email} (verified: ${user.emailVerified})`)
 
