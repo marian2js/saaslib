@@ -1,29 +1,34 @@
-import { createZodDto } from 'nestjs-zod'
-import { z } from 'nestjs-zod/z'
+import { IsEmail, IsString, MinLength } from 'class-validator'
+import { IsObjectId } from '../../../common/validators/is-object-id.validator'
 
-export class SignInDto extends createZodDto(
-  z.object({
-    email: z.string().email(),
-    password: z.string().min(8),
-  }),
-) {}
+export class SignInDto {
+  @IsEmail()
+  email: string
 
-export class SignUpWithPasswordDto extends createZodDto(
-  z.object({
-    email: z.string().email(),
-    password: z.string().min(8),
-  }),
-) {}
+  @IsString()
+  @MinLength(8)
+  password: string
+}
 
-export class RefreshTokenDto extends createZodDto(
-  z.object({
-    userId: z.string().base64(),
-    refreshToken: z.string(),
-  }),
-) {}
+export class SignUpWithPasswordDto {
+  @IsEmail()
+  email: string
 
-export class VerifyAuthCodeDto extends createZodDto(
-  z.object({
-    code: z.string(),
-  }),
-) {}
+  @IsString()
+  @MinLength(8)
+  password: string
+}
+
+export class RefreshTokenDto {
+  @IsString()
+  @IsObjectId()
+  userId: string
+
+  @IsString()
+  refreshToken: string
+}
+
+export class VerifyAuthCodeDto {
+  @IsString()
+  code: string
+}
