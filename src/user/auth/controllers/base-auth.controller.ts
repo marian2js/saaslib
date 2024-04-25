@@ -9,16 +9,19 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { Types } from 'mongoose'
-import { SecurityUtils } from '../../utils/security.utils'
-import { BaseUser } from '../base-user.model'
-import { BaseUserService } from '../base-user.service'
-import { BaseAuthService, SocialAuthUser } from './base-auth.service'
-import { GoogleOauth2Guard } from './guards/google-oauth2.guard'
-import { UserGuard } from './guards/user.guard'
-import { JwtPayload } from './types/auth.types'
+import { ZodValidationPipe } from 'nestjs-zod'
+import { SecurityUtils } from '../../../utils/security.utils'
+import { BaseUser } from '../../models/base-user.model'
+import { BaseUserService } from '../../services/base-user.service'
+import { RefreshTokenDto, SignInDto, SignUpWithPasswordDto, VerifyAuthCodeDto } from '../dtos/base-auth.dto'
+import { GoogleOauth2Guard } from '../guards/google-oauth2.guard'
+import { UserGuard } from '../guards/user.guard'
+import { BaseAuthService, SocialAuthUser } from '../services/base-auth.service'
+import { JwtPayload } from '../types/auth.types'
 
 export class BaseAuthController {
   protected logger = new Logger(BaseAuthController.name)
@@ -29,7 +32,8 @@ export class BaseAuthController {
   ) {}
 
   @Post('signin')
-  async signIn(@Body('email') email: string, @Body('password') password: string) {
+  @UsePipes(ZodValidationPipe)
+  async signIn(@Body() { email, password }: SignInDto) {
     if (!email || !password) {
       throw new UnauthorizedException('Invalid credentials')
     }
@@ -44,7 +48,8 @@ export class BaseAuthController {
   }
 
   @Post('signup')
-  async signUpWithPassword(@Body('email') email: string, @Body('password') password: string) {
+  @UsePipes(ZodValidationPipe)
+  async signUpWithPassword(@Body() { email, password }: SignUpWithPasswordDto) {
     if (!email || !password) {
       throw new UnauthorizedException('Invalid credentials')
     }
@@ -69,7 +74,8 @@ export class BaseAuthController {
   }
 
   @Post('refresh-token')
-  async refreshToken(@Body('userId') userId: string, @Body('refreshToken') refreshToken: string) {
+  @UsePipes(ZodValidationPipe)
+  async refreshToken(@Body() { userId, refreshToken }: RefreshTokenDto) {
     if (!userId || !refreshToken) {
       throw new UnauthorizedException()
     }
@@ -114,7 +120,8 @@ export class BaseAuthController {
   }
 
   @Post('verify-oauth')
-  async verifyAuthCode(@Body('code') code: string) {
+  @UsePipes(ZodValidationPipe)
+  async verifyAuthCode(@Body() { code }: VerifyAuthCodeDto) {
     if (!code) {
       throw new UnauthorizedException()
     }
@@ -129,7 +136,7 @@ export class BaseAuthController {
     return await this.completeSignIn(user)
   }
 
-  async completeSignIn(user: BaseUser) {
+  private async completeSignIn(user: BaseUser) {
     if (user.blocked) {
       throw new ForbiddenException('User is blocked')
     }
@@ -146,7 +153,7 @@ export class BaseAuthController {
     }
   }
 
-  async completeSignUp(user: BaseUser) {
+  private async completeSignUp(user: BaseUser) {
     this.logger.log(`Completing sign-up for ${user.email}`)
 
     if (user.emailVerified) {

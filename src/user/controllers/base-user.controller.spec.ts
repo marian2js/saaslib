@@ -2,9 +2,9 @@ import { Controller, INestApplication } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
+import { BaseUser, BaseUserSchema } from '../models/base-user.model'
+import { BaseUserService } from '../services/base-user.service'
 import { BaseUserController } from './base-user.controller'
-import { BaseUser, BaseUserSchema } from './base-user.model'
-import { BaseUserService } from './base-user.service'
 
 @Controller('users')
 export class UserController extends BaseUserController {

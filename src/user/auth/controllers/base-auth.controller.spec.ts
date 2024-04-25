@@ -4,11 +4,11 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { NestjsSaasModule } from 'src/nestjs-saas.module'
 import * as request from 'supertest'
-import { BaseUser, BaseUserSchema } from '../base-user.model'
-import { BaseUserService } from '../base-user.service'
+import { BaseUser, BaseUserSchema } from '../../models/base-user.model'
+import { BaseUserService } from '../../services/base-user.service'
+import { BaseAuthService } from '../services/base-auth.service'
+import { GoogleStrategy } from '../strategies/google.strategy'
 import { BaseAuthController } from './base-auth.controller'
-import { BaseAuthService } from './base-auth.service'
-import { GoogleStrategy } from './strategies/google.strategy'
 
 @Controller('auth')
 export class AuthController extends BaseAuthController {
@@ -88,6 +88,21 @@ describe('BaseAuthController', () => {
         .send({ email: 'test@example.com', password: 'password123' })
         .expect(403)
     })
+
+    it('should throw error if email is missing', async () => {
+      await request(app.getHttpServer()).post('/auth/signup').send({ password: 'password123' }).expect(400)
+    })
+
+    it('should throw error if password is missing', async () => {
+      await request(app.getHttpServer()).post('/auth/signup').send({ email: 'test@example.com' }).expect(400)
+    })
+
+    it('should throw error if email is invalid', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/signup')
+        .send({ email: 'invalid-email', password: 'password123' })
+        .expect(400)
+    })
   })
 
   describe('/POST signin', () => {
@@ -130,7 +145,6 @@ describe('BaseAuthController', () => {
   describe('/POST refresh-token', () => {
     it('should refresh token successfully', async () => {
       const { refreshToken } = await createUser('test-refresh@example.com', 'password123')
-
       const user = await userService.findOne({ email: 'test-refresh@example.com' })
 
       await request(app.getHttpServer())
@@ -145,13 +159,30 @@ describe('BaseAuthController', () => {
 
     it('should fail with invalid refresh token', async () => {
       await createUser('test-refresh-fail@example.com', 'password123')
-
       const user = await userService.findOne({ email: 'test-refresh-fail@example.com' })
 
       await request(app.getHttpServer())
         .post('/auth/refresh-token')
         .send({ userId: user._id.toString(), refreshToken: 'invalid-token' })
         .expect(401)
+    })
+
+    it('should fail with the refresh token from a different user', async () => {
+      const { refreshToken } = await createUser('test@example.com', 'password123')
+      await createUser('test2@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test2@example.com' })
+
+      await request(app.getHttpServer())
+        .post('/auth/refresh-token')
+        .send({ userId: user._id.toString(), refreshToken })
+        .expect(401)
+    })
+
+    it('should fail with missing refresh token', async () => {
+      await createUser('test@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test@example.com' })
+
+      await request(app.getHttpServer()).post('/auth/refresh-token').send({ userId: user._id.toString() }).expect(400)
     })
   })
 

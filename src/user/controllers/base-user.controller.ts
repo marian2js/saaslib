@@ -1,8 +1,8 @@
 import { Get, Injectable, Req, UseGuards } from '@nestjs/common'
 import { Request } from 'express'
 import { Types } from 'mongoose'
-import { UserGuard } from './auth/guards/user.guard'
-import { BaseUserService } from './base-user.service'
+import { UserGuard } from '../auth/guards/user.guard'
+import { BaseUserService } from '../services/base-user.service'
 
 @Injectable()
 export abstract class BaseUserController {

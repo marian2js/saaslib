@@ -1,8 +1,8 @@
+import { INestApplication } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import { BaseUser, BaseUserSchema } from './base-user.model'
 import { BaseUserService } from './base-user.service'
-import { INestApplication } from '@nestjs/common'
+import { BaseUser, BaseUserSchema } from '../models/base-user.model'
 
 describe('BaseUserService', () => {
   let app: INestApplication
