@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { SecurityUtils } from '../../utils/security.utils'
 import { BaseUser } from '../base-user.model'
@@ -10,6 +11,7 @@ export interface SocialAuthUser {
   picture: string
 }
 
+@Injectable()
 export class BaseAuthService {
   constructor(
     protected baseUserService: BaseUserService,

@@ -17,6 +17,8 @@ import { BaseUser } from '../base-user.model'
 import { BaseUserService } from '../base-user.service'
 import { BaseAuthService, SocialAuthUser } from './base-auth.service'
 import { GoogleOauth2Guard } from './guards/google-oauth2.guard'
+import { UserGuard } from './guards/user.guard'
+import { JwtPayload } from './types/auth.types'
 
 export class BaseAuthController {
   protected logger = new Logger(BaseAuthController.name)
@@ -59,13 +61,11 @@ export class BaseAuthController {
     return await this.completeSignIn(newUser)
   }
 
-  @Post('logout')
-  async logout(@Req() req: Request) {
-    const user = req.user as BaseUser
-    if (!user) {
-      throw new UnauthorizedException()
-    }
-    await this.baseUserService.updateOne({ _id: user._id }, { refreshTokenHash: null })
+  @UseGuards(UserGuard)
+  @Post('signout')
+  async signOut(@Req() req: Request) {
+    const user = req.user as JwtPayload
+    await this.baseUserService.updateOne({ _id: user.id }, { $unset: { refreshTokenHash: '1' } })
   }
 
   @Post('refresh-token')
