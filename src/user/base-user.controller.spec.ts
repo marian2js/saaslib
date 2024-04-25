@@ -1,4 +1,5 @@
-import { Controller } from '@nestjs/common'
+import { Controller, INestApplication } from '@nestjs/common'
+import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { BaseUserController } from './base-user.controller'
@@ -13,6 +14,7 @@ export class UserController extends BaseUserController {
 }
 
 describe('BaseUserController', () => {
+  let app: INestApplication
   let controller: UserController
 
   beforeEach(async () => {
@@ -20,13 +22,19 @@ describe('BaseUserController', () => {
       providers: [BaseUserService],
       controllers: [UserController],
       imports: [
+        JwtModule.register({}),
         MongooseModule.forRoot(global.__MONGO_URI__),
         MongooseModule.forFeature([{ name: BaseUser.name, schema: BaseUserSchema }]),
       ],
     }).compile()
 
+    app = module.createNestApplication()
     controller = module.get<UserController>(UserController)
+
+    await app.init()
   })
+
+  afterEach(async () => await app.close())
 
   it('should be defined', () => {
     expect(controller).toBeDefined()

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { INestApplication, Injectable } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { BaseEntityService } from './base-entity.service'
 
@@ -10,6 +10,7 @@ class EntityService extends BaseEntityService<any> {
 }
 
 describe('BaseEntityService', () => {
+  let app: INestApplication
   let service: EntityService
 
   beforeEach(async () => {
@@ -17,8 +18,13 @@ describe('BaseEntityService', () => {
       providers: [EntityService],
     }).compile()
 
+    app = module.createNestApplication()
     service = module.get<EntityService>(EntityService)
+
+    await app.init()
   })
+
+  afterEach(async () => await app.close())
 
   it('should be defined', () => {
     expect(service).toBeDefined()

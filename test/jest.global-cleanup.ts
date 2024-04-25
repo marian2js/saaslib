@@ -1,5 +1,8 @@
 import { MongoMemoryServerSetup } from './mongodb-memory-server-setup'
 
 afterEach(async () => {
-  await (global.__MONGOD__ as MongoMemoryServerSetup).clearDatabase()
+  const instance = global.__MONGOD__ as MongoMemoryServerSetup
+  if (instance) {
+    await instance.clearDatabase()
+  }
 })
