@@ -1,3 +1,4 @@
+export { EmailService } from './email/services/email.service'
 export { NestjsSaasModule } from './nestjs-saas.module'
 export { BaseAuthController } from './user/auth/controllers/base-auth.controller'
 export { UserGuard } from './user/auth/guards/user.guard'

@@ -62,7 +62,7 @@ export class BaseAuthController {
       hashedPassword: await SecurityUtils.hashWithBcrypt(password, 12),
       emailVerified: false,
     })
-    await this.completeSignUp(newUser)
+    await this.baseAuthService.completeSignUp(newUser)
     return await this.completeSignIn(newUser)
   }
 
@@ -107,7 +107,7 @@ export class BaseAuthController {
     }
 
     if (isNew) {
-      await this.completeSignUp(user)
+      await this.baseAuthService.completeSignUp(user)
     }
     const data = await this.completeSignIn(user)
 
@@ -150,16 +150,6 @@ export class BaseAuthController {
         _id: user._id.toString(),
       },
       token,
-    }
-  }
-
-  private async completeSignUp(user: BaseUser) {
-    this.logger.log(`Completing sign-up for ${user.email}`)
-
-    if (user.emailVerified) {
-      // TODO send welcome email
-    } else {
-      // TODO send verification email
     }
   }
 }

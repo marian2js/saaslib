@@ -43,6 +43,9 @@ export class BaseUser {
   emailVerified: boolean
 
   @Prop({})
+  emailVerificationCode?: string
+
+  @Prop({})
   blocked: boolean
 }
 

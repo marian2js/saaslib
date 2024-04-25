@@ -1,6 +1,7 @@
 import { INestApplication, Injectable } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { BaseEntityService } from './base-entity.service'
+import { testModuleImports } from 'src/tests/test.helpers'
 
 @Injectable()
 class EntityService extends BaseEntityService<any> {
@@ -16,6 +17,7 @@ describe('BaseEntityService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [EntityService],
+      imports: testModuleImports,
     }).compile()
 
     app = module.createNestApplication()

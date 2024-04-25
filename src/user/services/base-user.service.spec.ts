@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
+import { testModuleImports } from 'src/tests/test.helpers'
 import { BaseUserService } from './base-user.service'
-import { BaseUser, BaseUserSchema } from '../models/base-user.model'
 
 describe('BaseUserService', () => {
   let app: INestApplication
@@ -11,10 +10,7 @@ describe('BaseUserService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [BaseUserService],
-      imports: [
-        MongooseModule.forRoot(global.__MONGO_URI__),
-        MongooseModule.forFeature([{ name: BaseUser.name, schema: BaseUserSchema }]),
-      ],
+      imports: testModuleImports,
     }).compile()
 
     app = module.createNestApplication()

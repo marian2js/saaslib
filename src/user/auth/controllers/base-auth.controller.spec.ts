@@ -1,17 +1,15 @@
 import { Controller, INestApplication } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
-import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import { NestjsSaasModule } from 'src/nestjs-saas.module'
+import { EmailService } from 'src/main'
+import { testModuleImports } from 'src/tests/test.helpers'
 import * as request from 'supertest'
-import { BaseUser, BaseUserSchema } from '../../models/base-user.model'
 import { BaseUserService } from '../../services/base-user.service'
 import { BaseAuthService } from '../services/base-auth.service'
 import { GoogleStrategy } from '../strategies/google.strategy'
 import { BaseAuthController } from './base-auth.controller'
 
 @Controller('auth')
-export class AuthController extends BaseAuthController {
+class AuthController extends BaseAuthController {
   constructor(authService: BaseAuthService, userService: BaseUserService) {
     super(authService, userService)
   }
@@ -22,26 +20,22 @@ describe('BaseAuthController', () => {
   let controller: AuthController
   let userService: BaseUserService
   let authService: BaseAuthService
+  let emailService: EmailService
 
   beforeEach(async () => {
-    process.env.GOOGLE_CLIENT_ID = 'test'
-    process.env.GOOGLE_CLIENT_SECRET = 'test'
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [BaseUserService, BaseAuthService, GoogleStrategy],
       controllers: [AuthController],
-      imports: [
-        JwtModule.register({ secretOrPrivateKey: 'test' }),
-        NestjsSaasModule,
-        MongooseModule.forRoot(global.__MONGO_URI__),
-        MongooseModule.forFeature([{ name: BaseUser.name, schema: BaseUserSchema }]),
-      ],
+      imports: testModuleImports,
     }).compile()
 
     app = module.createNestApplication()
     controller = module.get<AuthController>(AuthController)
     userService = module.get<BaseUserService>(BaseUserService)
     authService = module.get<BaseAuthService>(BaseAuthService)
+    emailService = module.get<EmailService>(EmailService)
+
+    jest.spyOn(emailService, 'sendEmail').mockResolvedValue()
 
     await app.init()
   })

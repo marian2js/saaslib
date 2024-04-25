@@ -1,10 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common'
-import { JwtModule, JwtModuleOptions } from '@nestjs/jwt'
-import { GoogleStrategy, UserGuard } from './main'
-
-interface NestjsSaasOptions {
-  jwtOptions: JwtModuleOptions
-}
+import { JwtModule } from '@nestjs/jwt'
+import { EmailService, GoogleStrategy, UserGuard } from './main'
+import { NestjsSaasOptions } from './types/nestjs-saas-options'
 
 @Global()
 @Module({})
@@ -12,7 +9,7 @@ export class NestjsSaasModule {
   static forRoot(options: NestjsSaasOptions): DynamicModule {
     return {
       module: NestjsSaasModule,
-      imports: [JwtModule.register(options.jwtOptions)],
+      imports: [JwtModule.register(options.jwt)],
       providers: [
         {
           provide: 'NS_OPTIONS',
@@ -20,9 +17,10 @@ export class NestjsSaasModule {
         },
         GoogleStrategy,
         UserGuard,
+        EmailService,
       ],
       controllers: [],
-      exports: ['NS_OPTIONS'],
+      exports: ['NS_OPTIONS', EmailService],
     }
   }
 }

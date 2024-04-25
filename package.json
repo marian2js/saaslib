@@ -23,6 +23,7 @@
     "preversion": "yarn lint"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.556.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.2.0",
