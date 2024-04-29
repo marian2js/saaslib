@@ -15,28 +15,28 @@ export abstract class BaseEntityService<T> {
 
   constructor(private readonly model: Model<T>) {}
 
-  async findOne(filter: FilterQuery<T>): Promise<(T & Document) | null> {
+  findOne(filter: FilterQuery<T>): Promise<(T & Document) | null> {
     return this.model.findOne(filter).exec()
   }
 
-  async findMany(filter: FilterQuery<T>, options?: QueryOptions<T>): Promise<(T & Document)[]> {
+  findMany(filter: FilterQuery<T>, options?: QueryOptions<T>): Promise<(T & Document)[]> {
     return this.model.find(filter, null, options).exec()
   }
 
-  async findAll(): Promise<(T & Document)[]> {
-    return await this.model.find().exec()
+  findAll(): Promise<(T & Document)[]> {
+    return this.model.find().exec()
   }
 
-  async create(data: Partial<OmitMethods<T>>): Promise<T> {
+  create(data: Partial<OmitMethods<T>>): Promise<T> {
     const createdDocument = new this.model(data)
-    return createdDocument.save() as T
+    return createdDocument.save() as Promise<T>
   }
 
-  async updateById(id: typeof Document.prototype._id, data: UpdateQuery<T>) {
+  updateById(id: typeof Document.prototype._id, data: UpdateQuery<T>) {
     return this.model.updateOne({ _id: id }, data).exec()
   }
 
-  async updateOne(
+  updateOne(
     filter: FilterQuery<T>,
     update: UpdateQuery<T> | UpdateWithAggregationPipeline,
     options: MongooseUpdateQueryOptions<T> | null = null,
@@ -44,7 +44,7 @@ export abstract class BaseEntityService<T> {
     return this.model.updateOne(filter, update, options).exec()
   }
 
-  async updateMany(
+  updateMany(
     filter: FilterQuery<T>,
     update: UpdateQuery<T> | UpdateWithAggregationPipeline,
     options: MongooseUpdateQueryOptions<T> | null = null,
@@ -52,15 +52,19 @@ export abstract class BaseEntityService<T> {
     return this.model.updateMany(filter, update, options).exec()
   }
 
-  async deleteById(id: typeof Document.prototype._id) {
+  deleteById(id: typeof Document.prototype._id) {
     return this.model.deleteOne({ _id: id }).exec()
   }
 
-  async aggregate(pipeline: any[]) {
+  deleteOne(filter: FilterQuery<T>) {
+    return this.model.deleteOne(filter).exec()
+  }
+
+  aggregate(pipeline: any[]) {
     return this.model.aggregate(pipeline).exec()
   }
 
-  async bulkWrite(operations: any[]): Promise<any> {
+  bulkWrite(operations: any[]): Promise<any> {
     return this.model.bulkWrite(operations)
   }
 }
