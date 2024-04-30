@@ -3,90 +3,42 @@
 ## Installation
 
 ```bash
-$ yarn add nestjs-saas
+$ yarn add nestjs-saas @nestjs/jwt
+$ npx nestjs-saas init
 ```
 
-## Users
+## Configuration
 
-**src/user/user.model.ts**
+The required config variables were appended to your `.env` file. You can change the values as needed.
 
-```typescript
-import { SchemaFactory } from '@nestjs/mongoose'
-import { BaseUser } from 'nestjs-saas'
-
-export class User extends BaseUser {}
-export const UserSchema = SchemaFactory.createForClass(User)
-```
-
-**src/user/user.service.ts**
+## Import
 
 ```typescript
-import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import { BaseUserService } from 'nestjs-saas'
-import { User } from './user.model'
+import { Module } from '@nestjs/common'
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt'
+import { NestjsSaasModule } from 'nestjs-saas'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
 
-@Injectable()
-export class UserService extends BaseUserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {
-    super(userModel)
-  }
+const jwtOptions: JwtModuleOptions = {
+  global: true,
+  secret: process.env.JWT_SECRET,
+  signOptions: { expiresIn: '5 minutes' },
 }
-```
 
-**src/user/users.controller.ts**
-
-```typescript
-import { Controller } from '@nestjs/common'
-import { BaseUserController } from 'nestjs-saas'
-import { UserService } from './user.service'
-
-@Controller('users')
-export class UserController extends BaseUserController {
-  constructor(private userService: UserService) {
-    super(userService)
-  }
-}
-```
-
-## Auth
-
-**src/user/auth/auth.service.ts**
-
-```typescript
-import { Injectable } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
-import { BaseAuthService, EmailService } from 'nestjs-saas'
-import { UserService } from '../user.service'
-
-@Injectable()
-export class AuthService extends BaseAuthService {
-  constructor(
-    protected userService: UserService,
-    protected jwtService: JwtService,
-    protected emailService: EmailService,
-  ) {
-    super(userService, jwtService, emailService)
-  }
-}
-```
-
-**src/user/auth/auth.controller.ts**
-
-```typescript
-import { Controller } from '@nestjs/common'
-import { BaseAuthController } from 'nestjs-saas'
-import { UserService } from '../user.service'
-import { AuthService } from './auth.service'
-
-@Controller('auth')
-export class AuthController extends BaseAuthController {
-  constructor(
-    private authService: AuthService,
-    private userService: UserService,
-  ) {
-    super(authService, userService)
-  }
-}
+@Module({
+  imports: [
+    JwtModule.register(jwtOptions),
+    NestjsSaasModule.forRoot({
+      jwt: jwtOptions,
+      email: {
+        from: 'hi@example.com',
+        templates: {},
+      },
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
 ```
