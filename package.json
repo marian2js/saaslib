@@ -5,6 +5,7 @@
   "author": "marian2js",
   "license": "MIT",
   "main": "dist/src/main.js",
+  "types": "dist/src/main.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marian2js/nestjs-saas.git"
