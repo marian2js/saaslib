@@ -1,7 +1,7 @@
 import { Controller, INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Types } from 'mongoose'
-import { EmailService } from 'src/main'
+import { BaseUser, EmailService } from 'src/main'
 import { testModuleImports } from 'src/tests/test.helpers'
 import { SecurityUtils } from 'src/utils/security.utils'
 import * as request from 'supertest'
@@ -12,7 +12,7 @@ import { BaseAuthController } from './base-auth.controller'
 
 @Controller('auth')
 class AuthController extends BaseAuthController {
-  constructor(authService: BaseAuthService, userService: BaseUserService) {
+  constructor(authService: BaseAuthService, userService: BaseUserService<BaseUser>) {
     super(authService, userService)
   }
 }
@@ -20,7 +20,7 @@ class AuthController extends BaseAuthController {
 describe('BaseAuthController', () => {
   let app: INestApplication
   let controller: AuthController
-  let userService: BaseUserService
+  let userService: BaseUserService<BaseUser>
   let authService: BaseAuthService
   let emailService: EmailService
 
@@ -33,7 +33,7 @@ describe('BaseAuthController', () => {
 
     app = module.createNestApplication()
     controller = module.get<AuthController>(AuthController)
-    userService = module.get<BaseUserService>(BaseUserService)
+    userService = module.get<BaseUserService<BaseUser>>(BaseUserService)
     authService = module.get<BaseAuthService>(BaseAuthService)
     emailService = module.get<EmailService>(EmailService)
 

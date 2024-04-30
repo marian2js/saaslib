@@ -1,0 +1,27 @@
+import { FilterQuery, QueryOptions, Types } from 'mongoose'
+import { BaseEntityService } from 'src/base/base-entity.service'
+import { BaseUser } from 'src/main'
+import { OwneableModel } from '../models/owneable.model'
+
+export abstract class OwneableEntityService<T extends OwneableModel, U extends BaseUser> extends BaseEntityService<T> {
+  abstract getApiObject(entity: T, owner: U): Record<string, unknown>
+
+  async findManyByOwner(ownerId: Types.ObjectId | string, filter?: FilterQuery<T>, options?: QueryOptions<T>) {
+    if (typeof ownerId === 'string') {
+      ownerId = new Types.ObjectId(ownerId)
+    }
+    return this.findMany({ ...(filter ?? {}), owner: ownerId }, options)
+  }
+
+  canView(entity: T, owner: U) {
+    return entity.owner.equals(owner._id)
+  }
+
+  canEdit(entity: T, owner: U) {
+    return entity.owner.equals(owner._id)
+  }
+
+  canDelete(entity: T, owner: U) {
+    return entity.owner.equals(owner._id)
+  }
+}

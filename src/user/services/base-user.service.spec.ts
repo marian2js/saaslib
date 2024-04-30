@@ -1,11 +1,12 @@
 import { INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { testModuleImports } from 'src/tests/test.helpers'
+import { BaseUser } from '../models/base-user.model'
 import { BaseUserService } from './base-user.service'
 
 describe('BaseUserService', () => {
   let app: INestApplication
-  let service: BaseUserService
+  let service: BaseUserService<BaseUser>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -14,7 +15,7 @@ describe('BaseUserService', () => {
     }).compile()
 
     app = module.createNestApplication()
-    service = module.get<BaseUserService>(BaseUserService)
+    service = module.get<BaseUserService<BaseUser>>(BaseUserService)
 
     await app.init()
   })

@@ -1,12 +1,13 @@
 import { Controller, INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { testModuleImports } from 'src/tests/test.helpers'
+import { BaseUser } from '../models/base-user.model'
 import { BaseUserService } from '../services/base-user.service'
 import { BaseUserController } from './base-user.controller'
 
 @Controller('users')
-export class UserController extends BaseUserController {
-  constructor(private userService: BaseUserService) {
+export class UserController extends BaseUserController<BaseUser> {
+  constructor(private userService: BaseUserService<BaseUser>) {
     super(userService)
   }
 }

@@ -15,6 +15,10 @@ export abstract class BaseEntityService<T> {
 
   constructor(private readonly model: Model<T>) {}
 
+  findById(id: typeof Document.prototype._id): Promise<(T & Document) | null> {
+    return this.model.findById(id).exec()
+  }
+
   findOne(filter: FilterQuery<T>): Promise<(T & Document) | null> {
     return this.model.findOne(filter).exec()
   }

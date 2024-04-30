@@ -17,7 +17,7 @@ export class BaseAuthService {
   protected logger = new Logger(BaseAuthService.name)
 
   constructor(
-    protected baseUserService: BaseUserService,
+    protected baseUserService: BaseUserService<BaseUser>,
     protected jwtService: JwtService,
     protected emailService: EmailService,
   ) {}

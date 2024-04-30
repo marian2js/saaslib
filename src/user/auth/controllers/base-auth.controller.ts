@@ -34,7 +34,7 @@ export class BaseAuthController {
 
   constructor(
     protected baseAuthService: BaseAuthService,
-    protected baseUserService: BaseUserService,
+    protected baseUserService: BaseUserService<BaseUser>,
   ) {}
 
   @Post('signin')
