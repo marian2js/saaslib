@@ -28,10 +28,11 @@ interface OwneableEntityOptions<T> {
 
 @Injectable()
 export abstract class OwneableEntityController<T extends OwneableModel, U extends BaseUser> {
+  abstract options: OwneableEntityOptions<T>
+
   constructor(
     protected owneableEntityService: OwneableEntityService<T, U>,
     protected baseUserService: BaseUserService<U>,
-    protected options: OwneableEntityOptions<T>,
   ) {}
 
   @UseGuards(UserGuard)

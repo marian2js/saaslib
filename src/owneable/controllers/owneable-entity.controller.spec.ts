@@ -64,13 +64,15 @@ class UpdateFakeModelDto {
 
 @Controller('fake')
 export class FakeController extends OwneableEntityController<FakeModel, BaseUser> {
+  options = {
+    dtos: {
+      create: CreateFakeModelDto,
+      update: UpdateFakeModelDto,
+    },
+  }
+
   constructor(fakeEntityService: FakeEntityService, userService: BaseUserService<BaseUser>) {
-    super(fakeEntityService, userService, {
-      dtos: {
-        create: CreateFakeModelDto,
-        update: UpdateFakeModelDto,
-      },
-    })
+    super(fakeEntityService, userService)
   }
 }
 
