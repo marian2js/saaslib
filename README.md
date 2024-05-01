@@ -3,7 +3,7 @@
 ## Installation
 
 ```bash
-$ yarn add nestjs-saas @nestjs/jwt
+$ yarn add nestjs-saas @nestjs/jwt @nestjs/config
 $ npx nestjs-saas init
 ```
 
@@ -19,6 +19,7 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt'
 import { NestjsSaasModule } from 'nestjs-saas'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { ConfigModule } from '@nestjs/config'
 
 const jwtOptions: JwtModuleOptions = {
   global: true,
@@ -28,6 +29,7 @@ const jwtOptions: JwtModuleOptions = {
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     JwtModule.register(jwtOptions),
     NestjsSaasModule.forRoot({
       jwt: jwtOptions,
