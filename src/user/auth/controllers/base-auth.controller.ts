@@ -9,8 +9,6 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { Types } from 'mongoose'
@@ -38,7 +36,6 @@ export class BaseAuthController {
   ) {}
 
   @Post('signin')
-  @UsePipes(new ValidationPipe())
   async signIn(@Body() { email, password }: SignInDto) {
     if (!email || !password) {
       throw new UnauthorizedException('Invalid credentials')
@@ -54,7 +51,6 @@ export class BaseAuthController {
   }
 
   @Post('signup')
-  @UsePipes(new ValidationPipe())
   async signUpWithPassword(@Body() { email, password }: SignUpWithPasswordDto) {
     if (!email || !password) {
       throw new UnauthorizedException('Invalid credentials')
@@ -80,7 +76,6 @@ export class BaseAuthController {
   }
 
   @Post('refresh-token')
-  @UsePipes(new ValidationPipe())
   async refreshToken(@Body() { userId, refreshToken }: RefreshTokenDto) {
     if (!userId || !refreshToken) {
       throw new UnauthorizedException()
@@ -126,7 +121,6 @@ export class BaseAuthController {
   }
 
   @Post('verify-oauth')
-  @UsePipes(new ValidationPipe())
   async verifyAuthCode(@Body() { code }: VerifyAuthCodeDto) {
     const decoded = this.baseAuthService.verifyOAuthCode(code)
     if (!decoded) {
@@ -140,7 +134,6 @@ export class BaseAuthController {
   }
 
   @Post('verify-email')
-  @UsePipes(new ValidationPipe())
   async verifyEmail(@Body() { userId, code }: VerifyEmailDto) {
     const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
     if (!user) {

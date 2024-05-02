@@ -1,4 +1,4 @@
-import { Controller, INestApplication } from '@nestjs/common'
+import { Controller, INestApplication, ValidationPipe } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Types } from 'mongoose'
 import { BaseUser, EmailService } from 'src/main'
@@ -32,6 +32,7 @@ describe('BaseAuthController', () => {
     }).compile()
 
     app = module.createNestApplication()
+    app.useGlobalPipes(new ValidationPipe({}))
     controller = module.get<AuthController>(AuthController)
     userService = module.get<BaseUserService<BaseUser>>(BaseUserService)
     authService = module.get<BaseAuthService>(BaseAuthService)
@@ -83,14 +84,30 @@ describe('BaseAuthController', () => {
         .post('/auth/signup')
         .send({ email: 'test@example.com', password: 'password123' })
         .expect(403)
+        .expect((res) => {
+          expect(res.body.message).toBe('The email provided is already in use')
+        })
     })
 
     it('should throw error if email is missing', async () => {
-      await request(app.getHttpServer()).post('/auth/signup').send({ password: 'password123' }).expect(400)
+      await request(app.getHttpServer())
+        .post('/auth/signup')
+        .send({ password: 'password123' })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message[0]).toEqual('email must be an email')
+        })
     })
 
     it('should throw error if password is missing', async () => {
-      await request(app.getHttpServer()).post('/auth/signup').send({ email: 'test@example.com' }).expect(400)
+      await request(app.getHttpServer())
+        .post('/auth/signup')
+        .send({ email: 'test@example.com' })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message[0]).toEqual('password must be longer than or equal to 8 characters')
+          expect(res.body.message[1]).toEqual('password must be a string')
+        })
     })
 
     it('should throw error if email is invalid', async () => {
@@ -98,6 +115,9 @@ describe('BaseAuthController', () => {
         .post('/auth/signup')
         .send({ email: 'invalid-email', password: 'password123' })
         .expect(400)
+        .expect((res) => {
+          expect(res.body.message[0]).toEqual('email must be an email')
+        })
     })
   })
 
