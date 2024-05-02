@@ -13,13 +13,15 @@ export class EmailService {
   constructor(@Inject('NS_OPTIONS') options: NestjsSaasOptions) {
     this.emailConfig = options.email
 
-    this.sesClient = new SESClient({
-      region: process.env.AWS_SES_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
-      },
-    })
+    if (process.env.AWS_SES_ACCESS_KEY_ID) {
+      this.sesClient = new SESClient({
+        region: process.env.AWS_SES_REGION,
+        credentials: {
+          accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
+          secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
+        },
+      })
+    }
   }
 
   async sendWelcomeEmail(user: BaseUser) {
@@ -61,6 +63,15 @@ export class EmailService {
   }
 
   async sendEmail(to: string[], subject: string, body: string): Promise<void> {
+    // If SES is not configured, log email to console instead
+    if (!this.sesClient) {
+      this.logger.warn('AWS SES not configured, email not sent.')
+      console.log(`\n\nTo: ${to.join(', ')}`)
+      console.log(`Subject: ${subject}`)
+      console.log(body + '\n\n')
+      return
+    }
+
     const params = {
       Source: this.emailConfig.from,
       Destination: {
