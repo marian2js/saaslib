@@ -1,6 +1,6 @@
 import { DynamicModule, Global, Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
-import { EmailService, GoogleStrategy, UserGuard } from './main'
+import { EmailService, GoogleStrategy, UserGuard } from '.'
 import { NestjsSaasOptions } from './types/nestjs-saas-options'
 
 @Global()

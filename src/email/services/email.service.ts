@@ -1,7 +1,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { BaseUser } from 'src/main'
 import { NestjsSaasOptions } from 'src/types/nestjs-saas-options'
+import { BaseUser } from '../../user'
 import { EmailConfigOptions, EmailTemplate } from '../types/email-config-options'
 
 @Injectable()

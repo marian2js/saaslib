@@ -1,11 +1,11 @@
 {
   "name": "nestjs-saas",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "",
   "author": "marian2js",
   "license": "MIT",
-  "main": "dist/src/main.js",
-  "types": "dist/src/main.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marian2js/nestjs-saas.git"
@@ -24,7 +24,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "yarn build",
-    "prepublishOnly": "yarn test && yarn lint",
+    "prepublishOnly": "yarn test && yarn lint && yarn build",
     "preversion": "yarn lint"
   },
   "bin": {

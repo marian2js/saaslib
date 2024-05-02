@@ -1,6 +1,6 @@
 import { FilterQuery, QueryOptions, Types } from 'mongoose'
-import { BaseEntityService } from 'src/base/base-entity.service'
-import { BaseUser } from 'src/main'
+import { BaseEntityService } from '../../base/base-entity.service'
+import { BaseUser } from '../../user/models/base-user.model'
 import { OwneableModel } from '../models/owneable.model'
 
 export abstract class OwneableEntityService<T extends OwneableModel, U extends BaseUser> extends BaseEntityService<T> {
