@@ -1,6 +1,7 @@
-import { DynamicModule, Global, Module } from '@nestjs/common'
+import { DynamicModule, Global, Module, ValidationPipe } from '@nestjs/common'
+import { APP_FILTER, APP_PIPE } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
-import { EmailService, GoogleStrategy, UserGuard } from '.'
+import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
 import { NestjsSaasOptions } from './types/nestjs-saas-options'
 
 @Global()
@@ -14,6 +15,14 @@ export class NestjsSaasModule {
         {
           provide: 'NS_OPTIONS',
           useValue: options,
+        },
+        {
+          provide: APP_PIPE,
+          useClass: ValidationPipe,
+        },
+        {
+          provide: APP_FILTER,
+          useClass: HttpExceptionFilter,
         },
         GoogleStrategy,
         UserGuard,

@@ -1,4 +1,4 @@
-import { Controller, INestApplication, ValidationPipe } from '@nestjs/common'
+import { Controller, INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Types } from 'mongoose'
 import { EmailService } from 'src/email'
@@ -33,7 +33,6 @@ describe('BaseAuthController', () => {
     }).compile()
 
     app = module.createNestApplication()
-    app.useGlobalPipes(new ValidationPipe({}))
     controller = module.get<AuthController>(AuthController)
     userService = module.get<BaseUserService<BaseUser>>(BaseUserService)
     authService = module.get<BaseAuthService>(BaseAuthService)
