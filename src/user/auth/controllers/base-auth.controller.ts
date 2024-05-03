@@ -75,7 +75,7 @@ export class BaseAuthController {
     await this.baseUserService.updateOne({ _id: user.id }, { $unset: { refreshTokenHash: '1' } })
   }
 
-  @Post('refresh-token')
+  @Post('refresh')
   async refreshToken(@Body() { userId, refreshToken }: RefreshTokenDto) {
     if (!userId || !refreshToken) {
       throw new UnauthorizedException()
@@ -89,7 +89,7 @@ export class BaseAuthController {
     if (!(await this.baseAuthService.refreshTokenIsValid(user, refreshToken))) {
       throw new UnauthorizedException()
     }
-    return await this.completeSignIn(user)
+    return this.baseAuthService.generateAccessToken(user)
   }
 
   @Get('google')
@@ -168,7 +168,7 @@ export class BaseAuthController {
     }
     return {
       user: {
-        _id: user._id.toString(),
+        id: user._id.toString(),
       },
       token,
     }

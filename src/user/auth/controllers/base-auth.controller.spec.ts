@@ -1,4 +1,5 @@
 import { Controller, INestApplication } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Types } from 'mongoose'
 import { EmailService } from 'src/email'
@@ -24,6 +25,7 @@ describe('BaseAuthController', () => {
   let userService: BaseUserService<BaseUser>
   let authService: BaseAuthService
   let emailService: EmailService
+  let jwtService: JwtService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -37,6 +39,7 @@ describe('BaseAuthController', () => {
     userService = module.get<BaseUserService<BaseUser>>(BaseUserService)
     authService = module.get<BaseAuthService>(BaseAuthService)
     emailService = module.get<EmailService>(EmailService)
+    jwtService = module.get<JwtService>(JwtService)
 
     jest.spyOn(emailService, 'sendEmail').mockResolvedValue()
 
@@ -158,18 +161,18 @@ describe('BaseAuthController', () => {
     })
   })
 
-  describe('/POST refresh-token', () => {
+  describe('/POST refresh', () => {
     it('should refresh token successfully', async () => {
       const { refreshToken } = await createUser('test-refresh@example.com', 'password123')
       const user = await userService.findOne({ email: 'test-refresh@example.com' })
 
       await request(app.getHttpServer())
-        .post('/auth/refresh-token')
+        .post('/auth/refresh')
         .send({ userId: user._id.toString(), refreshToken })
         .expect(201)
         .expect((response) => {
-          expect(response.body.token).toBeDefined()
-          expect(response.body.token.accessToken).not.toEqual(refreshToken)
+          expect(response.body).toBeDefined()
+          expect(jwtService.verify(response.body.accessToken)).toMatchObject({ id: user._id.toString() })
         })
     })
 
@@ -178,7 +181,7 @@ describe('BaseAuthController', () => {
       const user = await userService.findOne({ email: 'test-refresh-fail@example.com' })
 
       await request(app.getHttpServer())
-        .post('/auth/refresh-token')
+        .post('/auth/refresh')
         .send({ userId: user._id.toString(), refreshToken: 'invalid-token' })
         .expect(401)
     })
@@ -189,7 +192,7 @@ describe('BaseAuthController', () => {
       const user = await userService.findOne({ email: 'test2@example.com' })
 
       await request(app.getHttpServer())
-        .post('/auth/refresh-token')
+        .post('/auth/refresh')
         .send({ userId: user._id.toString(), refreshToken })
         .expect(401)
     })
@@ -198,7 +201,7 @@ describe('BaseAuthController', () => {
       await createUser('test@example.com', 'password123')
       const user = await userService.findOne({ email: 'test@example.com' })
 
-      await request(app.getHttpServer()).post('/auth/refresh-token').send({ userId: user._id.toString() }).expect(400)
+      await request(app.getHttpServer()).post('/auth/refresh').send({ userId: user._id.toString() }).expect(400)
     })
   })
 
@@ -281,7 +284,7 @@ describe('BaseAuthController', () => {
         .send({ code: 'valid-code' })
         .expect(201)
         .expect((response) => {
-          expect(response.body.user._id).toEqual(decoded.id)
+          expect(response.body.user.id).toEqual(decoded.id)
         })
     })
 
