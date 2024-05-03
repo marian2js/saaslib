@@ -106,7 +106,6 @@ describe('OwneableEntityController', () => {
     const accessToken = jwtService.sign(
       {
         id: user._id,
-        email: user.email,
       },
       { secret: process.env.JWT_SECRET },
     )

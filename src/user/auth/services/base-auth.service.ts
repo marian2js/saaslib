@@ -41,7 +41,6 @@ export class BaseAuthService {
     const accessToken = this.jwtService.sign(
       {
         id: user._id,
-        email: user.email,
       },
       { secret: process.env.JWT_SECRET },
     )
