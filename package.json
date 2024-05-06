@@ -1,11 +1,14 @@
 {
   "name": "nestjs-saas",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "",
   "author": "marian2js",
   "license": "MIT",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/src/**/*"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marian2js/nestjs-saas.git"

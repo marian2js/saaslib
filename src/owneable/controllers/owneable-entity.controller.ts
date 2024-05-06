@@ -15,7 +15,7 @@ import { ClassConstructor, plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
 import { Request } from 'express'
 import { Types } from 'mongoose'
-import { BaseUser, BaseUserService, UserGuard } from 'src/user'
+import { BaseUser, BaseUserService, UserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
 
