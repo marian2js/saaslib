@@ -8,6 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test --workspaces --parallel"
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --parallel",
+    "lint": "npm run lint --workspaces --parallel"
   }
 }

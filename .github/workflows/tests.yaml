@@ -38,13 +38,13 @@ jobs:
           key: ${{ matrix.node-version }}
 
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+        run: npm install
 
       - name: Build
-        run: yarn build
+        run: npm run build
 
       - name: Run lint
-        run: yarn lint
+        run: npm run lint
 
       - name: Run tests
-        run: yarn test:cov
+        run: npm run test
