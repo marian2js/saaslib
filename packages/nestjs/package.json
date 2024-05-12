@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/marian2js/nestjs-saas.git"
+    "url": "git+https://github.com/marian2js/saaslib.git"
   },
   "scripts": {
     "build": "tsc",
@@ -101,5 +101,8 @@
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
