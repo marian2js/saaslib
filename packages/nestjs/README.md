@@ -3,8 +3,8 @@
 ## Installation
 
 ```bash
-$ yarn add nestjs-saas @nestjs/jwt @nestjs/config @nestjs/mongoose
-$ npx nestjs-saas init
+$ npm i @saaslib/nestjs @nestjs/jwt @nestjs/config @nestjs/mongoose
+$ npx @saaslib/nestjs init
 ```
 
 ## Configuration
@@ -18,7 +18,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
-import { NestjsSaasModule } from 'nestjs-saas'
+import { NestjsSaasModule } from '@saaslib/nestjs'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthController } from './user/auth/auth.controller'
