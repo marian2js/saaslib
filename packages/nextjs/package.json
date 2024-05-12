@@ -1,0 +1,30 @@
+{
+  "name": "@saaslib/nextjs",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marian2js/nextjs-saas.git"
+  },
+  "author": "marian2js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\"",
+    "lint": "echo \"Error: not configured\""
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "next": "^14.2.3"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.12.7",
+    "eslint": "^9.1.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "typescript": "^5.4.5"
+  }
+}
