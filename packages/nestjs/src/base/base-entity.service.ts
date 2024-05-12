@@ -56,11 +56,11 @@ export abstract class BaseEntityService<T> {
     return this.model.updateMany(filter, update, options).exec()
   }
 
-  deleteById(id: typeof Document.prototype._id) {
+  deleteById(id: typeof Document.prototype._id): Promise<{ acknowledged: boolean; deletedCount: number }> {
     return this.model.deleteOne({ _id: id }).exec()
   }
 
-  deleteOne(filter: FilterQuery<T>) {
+  deleteOne(filter: FilterQuery<T>): Promise<{ acknowledged: boolean; deletedCount: number }> {
     return this.model.deleteOne(filter).exec()
   }
 
