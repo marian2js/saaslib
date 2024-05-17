@@ -1,6 +1,7 @@
-import { DynamicModule, Global, Module, ValidationPipe } from '@nestjs/common'
+import { DynamicModule, Global, MiddlewareConsumer, Module, ValidationPipe } from '@nestjs/common'
 import { APP_FILTER, APP_PIPE } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
+import * as cookieParser from 'cookie-parser'
 import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
 import { NestjsSaasOptions } from './types/nestjs-saas-options'
 
@@ -31,5 +32,9 @@ export class NestjsSaasModule {
       controllers: [],
       exports: ['NS_OPTIONS', EmailService],
     }
+  }
+
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(cookieParser()).forRoutes('*')
   }
 }
