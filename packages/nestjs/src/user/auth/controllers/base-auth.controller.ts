@@ -73,6 +73,7 @@ export class BaseAuthController {
   async signOut(@Req() req: Request) {
     const user = req.user as JwtPayload
     await this.baseUserService.updateOne({ _id: user.id }, { $unset: { refreshTokenHash: '1' } })
+    return { ok: true }
   }
 
   @Post('refresh')
