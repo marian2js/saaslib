@@ -1,5 +1,3 @@
-'use server'
-
 import { passwordSignIn, passwordSignUp } from '../services'
 
 export async function passwordSignUpFormAction(
@@ -26,7 +24,8 @@ export async function passwordSignInFormAction(
   const rememberMe = formData.get('remember-me') as string
 
   try {
-    await passwordSignIn(email, password, !!rememberMe)
+    const user = await passwordSignIn(email, password, !!rememberMe)
+    localStorage.setItem('user', JSON.stringify(user))
     return { success: true, error: null }
   } catch (err) {
     return { success: false, error: (err as Error).message }

@@ -49,7 +49,7 @@ export async function verifyOAuthCode(code: string) {
     throw new Error('Invalid response')
   }
   setAuthCookie(res.token)
-  redirect('/')
+  return res.user
 }
 
 export async function signOut() {
