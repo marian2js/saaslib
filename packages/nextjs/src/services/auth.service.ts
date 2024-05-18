@@ -100,3 +100,23 @@ export async function setAuthCookie(token: { accessToken: string; refreshToken: 
     maxAge: rememberMe ? 60 * 60 * 24 * 365 : 60 * 60 * 24,
   })
 }
+
+export async function requestPasswordReset(email: string) {
+  await fetchApi('/auth/request-password-reset', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function resetPassword(code: string, newPassword: string) {
+  await fetchApi('/auth/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ code, newPassword }),
+  })
+}
