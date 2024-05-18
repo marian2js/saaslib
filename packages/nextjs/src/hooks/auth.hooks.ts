@@ -1,6 +1,6 @@
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { verifyOAuthCode } from '../services'
+import { useCallback, useEffect, useState } from 'react'
+import { signOutServer, verifyOAuthCode } from '../services'
 
 export function useOAuthRedirect(code: string | undefined, redirectTo: string = '/') {
   const router = useRouter()
@@ -17,4 +17,20 @@ export function useOAuthRedirect(code: string | undefined, redirectTo: string = 
     }
     run()
   }, [code])
+}
+
+export function useSignOut(redirectTo = '/') {
+  const [loading, setLoading] = useState(false)
+
+  const signOut = useCallback(async () => {
+    setLoading(true)
+    try {
+      await signOutServer()
+    } finally {
+      localStorage.removeItem('user')
+      window.location.href = redirectTo
+    }
+  }, [redirectTo])
+
+  return { signOut, loading }
 }

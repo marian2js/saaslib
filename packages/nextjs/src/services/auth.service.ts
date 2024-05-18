@@ -1,7 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { LoggedInUser } from '../types'
 import { fetchApi, fetchWithAuth } from '../utils'
 
 export async function passwordSignUp(email: string, password: string) {
@@ -20,13 +20,16 @@ export async function passwordSignUp(email: string, password: string) {
 }
 
 export async function passwordSignIn(email: string, password: string, rememberMe: boolean = true) {
-  const res = await fetchApi<{ user: any; token: { accessToken: string; refreshToken: string } }>('/auth/signin', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const res = await fetchApi<{ user: LoggedInUser; token: { accessToken: string; refreshToken: string } }>(
+    '/auth/signin',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
     },
-    body: JSON.stringify({ email, password }),
-  })
+  )
   if (!res.user || !res.token) {
     throw new Error('Invalid response')
   }
@@ -35,7 +38,7 @@ export async function passwordSignIn(email: string, password: string, rememberMe
 }
 
 export async function verifyOAuthCode(code: string) {
-  const res = await fetchApi<{ user: any; token: { accessToken: string; refreshToken: string } }>(
+  const res = await fetchApi<{ user: LoggedInUser; token: { accessToken: string; refreshToken: string } }>(
     '/auth/verify-oauth',
     {
       method: 'POST',
@@ -52,7 +55,7 @@ export async function verifyOAuthCode(code: string) {
   return res.user
 }
 
-export async function signOut() {
+export async function signOutServer() {
   await fetchWithAuth('/auth/signout', {
     method: 'POST',
   })
@@ -67,7 +70,6 @@ export async function signOut() {
     sameSite: 'lax',
     maxAge: 0,
   })
-  redirect('/')
 }
 
 export async function refreshAccessToken(userId: string, refreshToken: string): Promise<string | null> {
