@@ -294,4 +294,157 @@ describe('BaseAuthController', () => {
       await request(app.getHttpServer()).post('/auth/verify-oauth').send({ code: 'invalid-code' }).expect(401)
     })
   })
+
+  describe('/POST request-password-reset', () => {
+    it('should send a password reset email if the user exists', async () => {
+      await createUser('test@example.com', 'password123')
+
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(201)
+
+      expect(emailService.sendEmail).toHaveBeenCalled()
+      const user = await userService.findOne({ email: 'test@example.com' })
+      expect(user.passwordResetCode).toBeDefined()
+    })
+
+    it('should return 404 if the user does not exist', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'nonexistent@example.com' })
+        .expect(404)
+    })
+
+    it('should return 400 if email is not provided', async () => {
+      await request(app.getHttpServer()).post('/auth/request-password-reset').send({}).expect(400)
+    })
+
+    it('should track password reset attempts correctly', async () => {
+      await createUser('test@example.com', 'password123')
+      await userService.findOne({ email: 'test@example.com' })
+
+      // First attempt
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(201)
+
+      let updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.passwordResetAttempts).toBe(1)
+
+      // Second attempt
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(201)
+
+      updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.passwordResetAttempts).toBe(2)
+
+      // Third attempt
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(201)
+
+      updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.passwordResetAttempts).toBe(3)
+
+      // Fourth attempt (should fail)
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(403)
+
+      updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.passwordResetAttempts).toBe(3)
+    })
+
+    it('should reset password reset attempts after 6 hours', async () => {
+      await createUser('test@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test@example.com' })
+
+      // First attempt
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(201)
+
+      let updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.passwordResetAttempts).toBe(1)
+
+      // Simulate waiting for 6 hours
+      const sixHoursAgo = new Date(new Date().getTime() - 6 * 60 * 60 * 1000)
+      await userService.updateOne({ _id: user._id }, { firstPasswordResetAttempt: sixHoursAgo })
+
+      // Next attempt after 6 hours
+      await request(app.getHttpServer())
+        .post('/auth/request-password-reset')
+        .send({ email: 'test@example.com' })
+        .expect(201)
+
+      updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.passwordResetAttempts).toBe(1) // Reset to 1 after 6 hours
+    })
+  })
+
+  describe('/POST reset-password', () => {
+    it('should reset the password if the code is valid', async () => {
+      await createUser('test@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test@example.com' })
+      const resetCode = await authService.generatePasswordResetCode(user)
+
+      await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({ code: resetCode, newPassword: 'newpassword123' })
+        .expect(201)
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(await SecurityUtils.bcryptHashIsValid('newpassword123', updatedUser.hashedPassword)).toBe(true)
+      expect(updatedUser.passwordResetCode).not.toBeDefined()
+    })
+
+    it('should return 401 if the code is invalid', async () => {
+      await createUser('test@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test@example.com' })
+
+      await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({ code: 'invalid-token', newPassword: 'newpassword123' })
+        .expect(401)
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.hashedPassword).toBe(user.hashedPassword)
+    })
+
+    it('should return 401 if the code is invalid after a code was generated', async () => {
+      await createUser('test@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test@example.com' })
+      await authService.generatePasswordResetCode(user)
+
+      await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({ code: 'invalid-token', newPassword: 'newpassword123' })
+        .expect(401)
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.hashedPassword).toBe(user.hashedPassword)
+    })
+
+    it('should return 400 if any required field is missing', async () => {
+      await createUser('test@example.com', 'password123')
+      const user = await userService.findOne({ email: 'test@example.com' })
+
+      await request(app.getHttpServer()).post('/auth/reset-password').send({ code: 'valid-code' }).expect(400)
+
+      await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({ newPassword: 'newpassword123' })
+        .expect(400)
+
+      const updatedUser = await userService.findOne({ email: 'test@example.com' })
+      expect(updatedUser.hashedPassword).toBe(user.hashedPassword)
+    })
+  })
 })

@@ -9,5 +9,6 @@ export interface EmailConfigOptions {
   templates: {
     welcome?: EmailTemplate<{ email: string; name: string }>
     verification?: EmailTemplate<{ code: string }>
+    passwordReset?: EmailTemplate<{ code: string }>
   }
 }

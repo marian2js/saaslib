@@ -40,3 +40,17 @@ export class VerifyEmailDto {
   @IsString()
   code: string
 }
+
+export class RequestPasswordResetDto {
+  @IsEmail()
+  email: string
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  code: string
+
+  @IsString()
+  @MinLength(8)
+  newPassword: string
+}

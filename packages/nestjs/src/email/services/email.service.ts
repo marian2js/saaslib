@@ -50,6 +50,20 @@ export class EmailService {
     )
   }
 
+  async sendPasswordResetEmail(user: BaseUser, code: string) {
+    const resetUrl = `${process.env.FRONTEND_ENDPOINT}/complete-password-reset?code=${code}`
+    const template = this.emailConfig.templates?.passwordReset
+    await this.sendTemplateEmail(
+      user.email,
+      template,
+      { code },
+      {
+        subject: 'Password Reset Request',
+        html: `<p>To reset your password, please click the following link: <a href="${resetUrl}">${resetUrl}</a></p>`,
+      },
+    )
+  }
+
   async sendTemplateEmail<T>(
     to: string,
     template: EmailTemplate<T>,

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ForbiddenException,
   Get,
@@ -17,6 +18,8 @@ import { BaseUser } from '../../models/base-user.model'
 import { BaseUserService } from '../../services/base-user.service'
 import {
   RefreshTokenDto,
+  RequestPasswordResetDto,
+  ResetPasswordDto,
   SignInDto,
   SignUpWithPasswordDto,
   VerifyAuthCodeDto,
@@ -156,6 +159,54 @@ export class BaseAuthController {
     } else {
       throw new UnauthorizedException()
     }
+  }
+
+  @Post('request-password-reset')
+  async requestPasswordReset(@Body() { email }: RequestPasswordResetDto) {
+    if (!email) {
+      throw new BadRequestException('Email is required')
+    }
+    const user = await this.baseUserService.findOne({ email })
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    const resetToken = await this.baseAuthService.generatePasswordResetCode(user)
+    await this.baseAuthService.sendPasswordResetEmail(user, resetToken)
+    return { ok: true }
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() { code, newPassword }: ResetPasswordDto) {
+    if (!code || !newPassword) {
+      throw new BadRequestException('Invalid data')
+    }
+    const codeVerifiedUserId = await this.baseAuthService.verifyPasswordResetCode(code)
+    if (!codeVerifiedUserId) {
+      throw new UnauthorizedException('Invalid or expired reset code')
+    }
+    const { userId } = codeVerifiedUserId
+    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    if (user.passwordResetCode !== code) {
+      throw new UnauthorizedException('Invalid or expired reset code')
+    }
+    const hashedPassword = await SecurityUtils.hashWithBcrypt(newPassword, 12)
+    await this.baseUserService.updateOne(
+      { _id: user._id },
+      {
+        hashedPassword,
+        ...(user.emailVerified ? {} : { emailVerified: true }),
+        $unset: {
+          passwordResetCode: '1',
+          firstPasswordResetAttempt: '1',
+          passwordResetAttempts: '1',
+          ...(user.emailVerificationCode ? {} : { emailVerificationCode: '1' }),
+        },
+      },
+    )
+    return { ok: true }
   }
 
   private async completeSignIn(user: BaseUser) {

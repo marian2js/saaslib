@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { EmailService } from '../../../email/services/email.service'
 import { SecurityUtils } from '../../../utils/security.utils'
@@ -103,5 +103,62 @@ export class BaseAuthService {
       await this.baseUserService.updateOne({ _id: user._id }, { emailVerificationCode: hashedVerificationCode })
       await this.emailService.sendVerificationEmail(user, verificationCode)
     }
+  }
+
+  async generatePasswordResetCode(user: BaseUser): Promise<string> {
+    const now = new Date()
+
+    const payload = { c: `reset-password:${user._id}` }
+    const resetCode = this.jwtService.sign(payload, {
+      secret: process.env.JWT_RESET_SECRET ?? process.env.JWT_SECRET,
+      expiresIn: '24h',
+    })
+
+    if (
+      user.firstPasswordResetAttempt &&
+      now.getTime() - user.firstPasswordResetAttempt.getTime() < 6 * 60 * 60 * 1000
+    ) {
+      if (user.passwordResetAttempts >= 3) {
+        throw new ForbiddenException(
+          'You have exceeded the maximum number of password reset attempts. Please try again later.',
+        )
+      }
+      await this.baseUserService.updateOne(
+        { _id: user._id },
+        {
+          passwordResetCode: resetCode,
+          $inc: { passwordResetAttempts: 1 },
+        },
+      )
+    } else {
+      await this.baseUserService.updateOne(
+        { _id: user._id },
+        {
+          passwordResetCode: resetCode,
+          firstPasswordResetAttempt: now,
+          passwordResetAttempts: 1,
+        },
+      )
+    }
+
+    await this.baseUserService.updateOne({ _id: user._id }, { passwordResetCode: resetCode })
+    return resetCode
+  }
+
+  async verifyPasswordResetCode(code: string): Promise<{ userId: string }> {
+    try {
+      const payload = this.jwtService.verify(code, { secret: process.env.JWT_RESET_SECRET ?? process.env.JWT_SECRET })
+      const [action, userId] = payload.c.split(':')
+      if (action === 'reset-password') {
+        return { userId }
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+
+  async sendPasswordResetEmail(user: BaseUser, resetCode: string) {
+    await this.emailService.sendPasswordResetEmail(user, resetCode)
   }
 }

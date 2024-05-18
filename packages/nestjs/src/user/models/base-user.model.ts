@@ -37,13 +37,22 @@ export class BaseUser {
   refreshTokenHash?: string
 
   @Prop({})
-  passwordAttempt?: number
+  passwordAttempts?: number
 
   @Prop({})
   emailVerified: boolean
 
   @Prop({})
   emailVerificationCode?: string
+
+  @Prop({})
+  passwordResetCode?: string
+
+  @Prop({})
+  passwordResetAttempts?: number
+
+  @Prop({})
+  firstPasswordResetAttempt?: Date
 
   @Prop({})
   blocked: boolean
