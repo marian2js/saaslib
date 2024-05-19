@@ -1,16 +1,11 @@
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { EmailService } from '../../../email/services/email.service'
+import { UserProviderService } from '../../../user/services/user-provider.service'
 import { SecurityUtils } from '../../../utils/security.utils'
 import { BaseUser } from '../../models/base-user.model'
 import { BaseUserService } from '../../services/base-user.service'
-
-export interface SocialAuthUser {
-  email: string
-  firstName: string
-  lastName: string
-  picture: string
-}
+import { UserSSOProfile } from '../types/auth.types'
 
 @Injectable()
 export class BaseAuthService {
@@ -20,20 +15,45 @@ export class BaseAuthService {
     protected baseUserService: BaseUserService<BaseUser>,
     protected jwtService: JwtService,
     protected emailService: EmailService,
+    protected userProviderService: UserProviderService,
   ) {}
 
-  async getUserFromSSO(user: SocialAuthUser): Promise<{ user: BaseUser; isNew: boolean }> {
-    const existingUser = await this.baseUserService.findOne({ email: user.email })
+  async getUserFromSSO(profile: UserSSOProfile): Promise<{ user: BaseUser; isNew: boolean }> {
+    const existingUser = await this.baseUserService.findOne({ email: profile.email })
     if (existingUser) {
-      return { user: existingUser, isNew: false }
+      if (profile.emailVerified) {
+        await this.userProviderService.createOrUpdateFromSSO(existingUser, profile)
+        if (
+          !existingUser.emailVerified ||
+          !existingUser.avatar ||
+          !existingUser.name ||
+          existingUser.emailVerificationCode
+        ) {
+          await this.baseUserService.updateOne(
+            { _id: existingUser._id },
+            {
+              emailVerified: true,
+              ...(existingUser.name ? {} : { name: profile.displayName ?? `${profile.firstName} ${profile.lastName}` }),
+              ...(existingUser.avatar ? {} : { avatar: profile.picture }),
+              ...(existingUser.emailVerificationCode ? { $unset: { emailVerificationCode: '1' } } : {}),
+            },
+          )
+        }
+        return { user: existingUser, isNew: false }
+      }
+      throw new ForbiddenException(
+        `User with email ${profile.email} already exists but email is not verified on ${profile.provider}. ` +
+          `Email needs to be verified in order to vinculate the account.`,
+      )
     }
     const newUser = await this.baseUserService.create({
-      email: user.email,
-      name: `${user.firstName} ${user.lastName}`,
-      emailVerified: true,
+      email: profile.email,
+      emailVerified: profile.emailVerified,
+      name: profile.displayName ?? `${profile.firstName} ${profile.lastName}`,
       // TODO save picture
-      avatar: user.picture,
+      avatar: profile.picture,
     })
+    await this.userProviderService.createFromSSO(newUser, profile)
     return { user: newUser, isNew: true }
   }
 

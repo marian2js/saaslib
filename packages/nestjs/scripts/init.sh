@@ -48,7 +48,7 @@ EOF
 cat << 'EOF' > $BASE_DIR/auth/auth.service.ts
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { BaseAuthService, EmailService } from '@saaslib/nestjs'
+import { BaseAuthService, EmailService, UserProviderService } from '@saaslib/nestjs'
 import { UserService } from '../user.service'
 
 @Injectable()
@@ -57,8 +57,9 @@ export class AuthService extends BaseAuthService {
     protected userService: UserService,
     protected jwtService: JwtService,
     protected emailService: EmailService,
+    protected userProviderService: UserProviderService,
   ) {
-    super(userService, jwtService, emailService)
+    super(userService, jwtService, emailService, userProviderService)
   }
 }
 EOF

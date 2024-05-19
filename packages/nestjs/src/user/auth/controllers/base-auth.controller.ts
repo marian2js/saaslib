@@ -27,8 +27,8 @@ import {
 } from '../dtos/base-auth.dto'
 import { GoogleOauth2Guard } from '../guards/google-oauth2.guard'
 import { UserGuard } from '../guards/user.guard'
-import { BaseAuthService, SocialAuthUser } from '../services/base-auth.service'
-import { JwtPayload } from '../types/auth.types'
+import { BaseAuthService } from '../services/base-auth.service'
+import { JwtPayload, UserSSOProfile } from '../types/auth.types'
 
 export class BaseAuthController {
   protected logger = new Logger(BaseAuthController.name)
@@ -106,7 +106,7 @@ export class BaseAuthController {
     if (!req.user) {
       throw new UnauthorizedException()
     }
-    const { user, isNew } = await this.baseAuthService.getUserFromSSO(req.user as SocialAuthUser)
+    const { user, isNew } = await this.baseAuthService.getUserFromSSO(req.user as UserSSOProfile)
     if (!user) {
       throw new NotFoundException('User not found')
     }
