@@ -18,7 +18,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
-import { NestjsSaasModule } from '@saaslib/nestjs'
+import { SaaslibModule } from '@saaslib/nestjs'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthController } from './user/auth/auth.controller'
@@ -39,7 +39,7 @@ const jwtOptions: JwtModuleOptions = {
     MongooseModule.forRoot(process.env.MONGO_URI),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     JwtModule.register(jwtOptions),
-    NestjsSaasModule.forRoot({
+    SaaslibModule.forRoot({
       jwt: jwtOptions,
       email: {
         from: 'hi@example.com',

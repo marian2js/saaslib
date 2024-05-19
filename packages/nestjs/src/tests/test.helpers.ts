@@ -1,11 +1,11 @@
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
-import { NestjsSaasModule } from 'src/nestjs-saas.module'
+import { SaaslibModule } from 'src/saaslib.module'
 import { BaseUser, BaseUserSchema } from 'src/user'
 
 export const testModuleImports = [
   JwtModule.register({ secretOrPrivateKey: 'test' }),
-  NestjsSaasModule.forRoot({
+  SaaslibModule.forRoot({
     jwt: { secretOrPrivateKey: 'test' },
     email: { from: 'test@example.com', templates: {} },
   }),

@@ -1,1 +1,1 @@
-export * from './nestjs-saas-options'
+export * from './saaslib-options'

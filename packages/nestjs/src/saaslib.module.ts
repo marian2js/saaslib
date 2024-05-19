@@ -4,23 +4,23 @@ import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
 import * as cookieParser from 'cookie-parser'
 import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
-import { NestjsSaasOptions } from './types/nestjs-saas-options'
+import { SaaslibOptions } from './types/saaslib-options'
 import { UserProvider, UserProviderSchema } from './user/models/user-provider.model'
 import { UserProviderService } from './user/services/user-provider.service'
 
 @Global()
 @Module({})
-export class NestjsSaasModule {
-  static forRoot(options: NestjsSaasOptions): DynamicModule {
+export class SaaslibModule {
+  static forRoot(options: SaaslibOptions): DynamicModule {
     return {
-      module: NestjsSaasModule,
+      module: SaaslibModule,
       imports: [
         JwtModule.register(options.jwt),
         MongooseModule.forFeature([{ name: UserProvider.name, schema: UserProviderSchema }]),
       ],
       providers: [
         {
-          provide: 'NS_OPTIONS',
+          provide: 'SL_OPTIONS',
           useValue: options,
         },
         {
@@ -37,7 +37,7 @@ export class NestjsSaasModule {
         UserProviderService,
       ],
       controllers: [],
-      exports: ['NS_OPTIONS', EmailService, UserProviderService],
+      exports: ['SL_OPTIONS', EmailService, UserProviderService],
     }
   }
 

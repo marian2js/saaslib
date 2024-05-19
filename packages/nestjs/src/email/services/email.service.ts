@@ -1,6 +1,6 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { NestjsSaasOptions } from 'src/types/nestjs-saas-options'
+import { SaaslibOptions } from 'src/types'
 import { BaseUser } from '../../user'
 import { EmailConfigOptions, EmailTemplate } from '../types/email-config-options'
 
@@ -10,7 +10,7 @@ export class EmailService {
   protected emailConfig: EmailConfigOptions
   protected sesClient: SESClient
 
-  constructor(@Inject('NS_OPTIONS') options: NestjsSaasOptions) {
+  constructor(@Inject('SL_OPTIONS') options: SaaslibOptions) {
     this.emailConfig = options.email
 
     if (process.env.AWS_SES_ACCESS_KEY_ID) {

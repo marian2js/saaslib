@@ -1,6 +1,6 @@
 export * from './common'
 export * from './email'
-export { NestjsSaasModule } from './nestjs-saas.module'
 export * from './owneable'
+export * from './saaslib.module'
 export * from './types'
 export * from './user'
