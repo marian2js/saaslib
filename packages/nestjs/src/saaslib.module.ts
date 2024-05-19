@@ -32,11 +32,13 @@ export class SaaslibModule {
           provide: APP_FILTER,
           useClass: HttpExceptionFilter,
         },
-        GoogleStrategy,
-        LinkedInStrategy,
         UserGuard,
         EmailService,
         UserProviderService,
+
+        // Auth Strategies
+        ...(process.env.GOOGLE_CLIENT_ID ? [GoogleStrategy] : []),
+        ...(process.env.LINKEDIN_CLIENT_ID ? [LinkedInStrategy] : []),
       ],
       controllers: [],
       exports: ['SL_OPTIONS', EmailService, UserProviderService],
