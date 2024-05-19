@@ -25,6 +25,7 @@ import {
   VerifyAuthCodeDto,
   VerifyEmailDto,
 } from '../dtos/base-auth.dto'
+import { LinkedInOauth2Guard } from '../guards'
 import { GoogleOauth2Guard } from '../guards/google-oauth2.guard'
 import { UserGuard } from '../guards/user.guard'
 import { BaseAuthService } from '../services/base-auth.service'
@@ -94,34 +95,6 @@ export class BaseAuthController {
       throw new UnauthorizedException()
     }
     return this.baseAuthService.generateAccessToken(user)
-  }
-
-  @Get('google')
-  @UseGuards(GoogleOauth2Guard)
-  googleAuth() {}
-
-  @Get('google/callback')
-  @UseGuards(GoogleOauth2Guard)
-  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    if (!req.user) {
-      throw new UnauthorizedException()
-    }
-    const { user, isNew } = await this.baseAuthService.getUserFromSSO(req.user as UserSSOProfile)
-    if (!user) {
-      throw new NotFoundException('User not found')
-    }
-
-    if (isNew) {
-      await this.baseAuthService.completeSignUp(user)
-    }
-    const data = await this.completeSignIn(user)
-
-    if (!process.env.COMPLETE_OAUTH_URL) {
-      return data
-    }
-
-    const oauthCode = this.baseAuthService.generateOAuthCode(user)
-    res.redirect(`${process.env.COMPLETE_OAUTH_URL}?code=${oauthCode}`)
   }
 
   @Post('verify-oauth')
@@ -207,6 +180,48 @@ export class BaseAuthController {
       },
     )
     return { ok: true }
+  }
+
+  @Get('google')
+  @UseGuards(GoogleOauth2Guard)
+  googleAuth() {}
+
+  @Get('google/callback')
+  @UseGuards(GoogleOauth2Guard)
+  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    return await this.ssoAuthRedirect(req, res)
+  }
+
+  @Get('linkedin')
+  @UseGuards(LinkedInOauth2Guard)
+  linkedinAuth() {}
+
+  @Get('linkedin/callback')
+  @UseGuards(LinkedInOauth2Guard)
+  async linkedinAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    return await this.ssoAuthRedirect(req, res)
+  }
+
+  protected async ssoAuthRedirect(req: Request, res: Response) {
+    if (!req.user) {
+      throw new UnauthorizedException()
+    }
+    const { user, isNew } = await this.baseAuthService.getUserFromSSO(req.user as UserSSOProfile)
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+
+    if (isNew) {
+      await this.baseAuthService.completeSignUp(user)
+    }
+    const data = await this.completeSignIn(user)
+
+    if (!process.env.COMPLETE_OAUTH_URL) {
+      return data
+    }
+
+    const oauthCode = this.baseAuthService.generateOAuthCode(user)
+    res.redirect(`${process.env.COMPLETE_OAUTH_URL}?code=${oauthCode}`)
   }
 
   protected async completeSignIn(user: BaseUser) {

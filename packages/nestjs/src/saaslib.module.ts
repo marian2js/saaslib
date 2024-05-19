@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import * as cookieParser from 'cookie-parser'
 import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
 import { SaaslibOptions } from './types/saaslib-options'
+import { LinkedInStrategy } from './user/auth/strategies/linkedin.strategy'
 import { UserProvider, UserProviderSchema } from './user/models/user-provider.model'
 import { UserProviderService } from './user/services/user-provider.service'
 
@@ -32,6 +33,7 @@ export class SaaslibModule {
           useClass: HttpExceptionFilter,
         },
         GoogleStrategy,
+        LinkedInStrategy,
         UserGuard,
         EmailService,
         UserProviderService,

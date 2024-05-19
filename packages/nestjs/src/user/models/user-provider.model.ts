@@ -20,4 +20,4 @@ export class UserProvider {
 
 export const UserProviderSchema = SchemaFactory.createForClass(UserProvider)
 
-UserProviderSchema.index({ userId: 1, providerName: 1 }, { unique: true })
+UserProviderSchema.index({ userId: 1, provider: 1 }, { unique: true })

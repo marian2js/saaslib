@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Types } from 'mongoose'
 import { EmailService } from 'src/email'
 import { testModuleImports } from 'src/tests/test.helpers'
-import { BaseUser } from 'src/user'
+import { BaseUser, LinkedInStrategy } from 'src/user'
 import { SecurityUtils } from 'src/utils/security.utils'
 import * as request from 'supertest'
 import { BaseUserService } from '../../services/base-user.service'
@@ -29,7 +29,7 @@ describe('BaseAuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BaseUserService, BaseAuthService, GoogleStrategy],
+      providers: [BaseUserService, BaseAuthService, GoogleStrategy, LinkedInStrategy],
       controllers: [AuthController],
       imports: testModuleImports,
     }).compile()
@@ -269,6 +269,17 @@ describe('BaseAuthController', () => {
         .expect(302)
         .expect((response) => {
           expect(response.headers.location).toContain('accounts.google.com')
+        })
+    })
+  })
+
+  describe('/GET linkedin', () => {
+    it('should redirect to LinkedIn OAuth page', async () => {
+      await request(app.getHttpServer())
+        .get('/auth/linkedin')
+        .expect(302)
+        .expect((response) => {
+          expect(response.headers.location).toContain('linkedin.com')
         })
     })
   })
