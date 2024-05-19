@@ -209,7 +209,7 @@ export class BaseAuthController {
     return { ok: true }
   }
 
-  private async completeSignIn(user: BaseUser) {
+  protected async completeSignIn(user: BaseUser) {
     if (user.blocked) {
       throw new ForbiddenException('User is blocked')
     }
@@ -221,6 +221,8 @@ export class BaseAuthController {
     return {
       user: {
         id: user._id.toString(),
+        name: user.name,
+        avatar: user.avatar,
       },
       token,
     }
