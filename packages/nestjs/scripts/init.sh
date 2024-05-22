@@ -6,9 +6,10 @@ mkdir -p $BASE_DIR/auth
 
 # User Model
 cat << 'EOF' > $BASE_DIR/user.model.ts
-import { SchemaFactory } from '@nestjs/mongoose'
+import { Schema, SchemaFactory } from '@nestjs/mongoose'
 import { BaseUser } from '@saaslib/nestjs'
 
+@Schema()
 export class User extends BaseUser {}
 export const UserSchema = SchemaFactory.createForClass(User)
 EOF

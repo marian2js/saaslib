@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { Prop, Schema } from '@nestjs/mongoose'
 import { HydratedDocument, Types } from 'mongoose'
 
 export type BaseUserDocument = HydratedDocument<BaseUser>
@@ -57,5 +57,3 @@ export class BaseUser {
   @Prop({})
   blocked: boolean
 }
-
-export const BaseUserSchema = SchemaFactory.createForClass(BaseUser)

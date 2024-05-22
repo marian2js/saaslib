@@ -1,7 +1,9 @@
 import { JwtModule } from '@nestjs/jwt'
-import { MongooseModule } from '@nestjs/mongoose'
+import { MongooseModule, SchemaFactory } from '@nestjs/mongoose'
 import { SaaslibModule } from 'src/saaslib.module'
-import { BaseUser, BaseUserSchema } from 'src/user'
+import { BaseUser } from 'src/user'
+
+export const BaseUserSchema = SchemaFactory.createForClass(BaseUser)
 
 export const testModuleImports = [
   JwtModule.register({ secretOrPrivateKey: 'test' }),
