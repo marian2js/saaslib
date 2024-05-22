@@ -31,16 +31,19 @@ export class UserService extends BaseUserService<User> {
 EOF
 
 # User Controller
-cat << 'EOF' > $BASE_DIR/users.controller.ts
+cat << 'EOF' > $BASE_DIR/user.controller.ts
 import { Controller } from '@nestjs/common'
-import { BaseUserController } from '@saaslib/nestjs'
+import { BaseUserController, EmailService } from '@saaslib/nestjs'
 import { User } from './user.model'
 import { UserService } from './user.service'
 
 @Controller('users')
 export class UserController extends BaseUserController<User> {
-  constructor(private userService: UserService) {
-    super(userService)
+  constructor(
+    protected userService: UserService,
+    protected emailService: EmailService,
+  ) {
+    super(userService, emailService)
   }
 }
 EOF
