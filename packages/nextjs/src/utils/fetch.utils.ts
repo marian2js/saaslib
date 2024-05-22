@@ -28,7 +28,8 @@ export async function fetchWithAuth<T>(path: string, options?: RequestInit): Pro
   return fetchApi<T>(path, {
     ...options,
     headers: {
-      ...options?.headers,
+      'Content-Type': 'application/json',
+      ...(options?.headers ?? {}),
       Authorization: `Bearer ${token}`,
     },
   })

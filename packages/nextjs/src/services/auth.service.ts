@@ -1,7 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { LoggedInUser } from '../types'
+import { BaseLoggedInUser } from '../types'
 import { fetchApi, fetchWithAuth } from '../utils'
 
 export async function passwordSignUp(email: string, password: string) {
@@ -20,7 +20,7 @@ export async function passwordSignUp(email: string, password: string) {
 }
 
 export async function passwordSignIn(email: string, password: string, rememberMe: boolean = true) {
-  const res = await fetchApi<{ user: LoggedInUser; token: { accessToken: string; refreshToken: string } }>(
+  const res = await fetchApi<{ user: BaseLoggedInUser; token: { accessToken: string; refreshToken: string } }>(
     '/auth/signin',
     {
       method: 'POST',
@@ -38,7 +38,7 @@ export async function passwordSignIn(email: string, password: string, rememberMe
 }
 
 export async function verifyOAuthCode(code: string) {
-  const res = await fetchApi<{ user: LoggedInUser; token: { accessToken: string; refreshToken: string } }>(
+  const res = await fetchApi<{ user: BaseLoggedInUser; token: { accessToken: string; refreshToken: string } }>(
     '/auth/verify-oauth',
     {
       method: 'POST',

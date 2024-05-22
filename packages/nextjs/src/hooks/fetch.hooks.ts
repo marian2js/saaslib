@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FetchApiError } from '../errors'
 
 // If skip is set then skipDefault must also be set
@@ -36,4 +36,42 @@ export function useFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
   }, [fullUrl, options.skip])
 
   return { data, loading, error }
+}
+
+export function useApiCallback<T>(url: string, options: FetchHookOptions<T> = {}) {
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<FetchApiError | null>(null)
+
+  const fullUrl = url.startsWith('/') ? process.env.NEXT_PUBLIC_API_ENDPOINT + url : url
+
+  const callback = useCallback(async (): Promise<T | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(fullUrl, {
+        credentials: 'include',
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        },
+      })
+      const result = await res.json()
+      if (result?.error) {
+        setError(new FetchApiError(result))
+        return null
+      } else {
+        setSuccess(true)
+        return result as T
+      }
+    } catch (err) {
+      setError(err as FetchApiError)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [fullUrl, options])
+
+  return { callback, loading, error, success }
 }
