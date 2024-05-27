@@ -11,20 +11,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common'
-import { ClassConstructor, plainToClass } from 'class-transformer'
+import { plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
 import { Request } from 'express'
 import { Types } from 'mongoose'
 import { BaseUser, BaseUserService, UserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
-
-interface OwneableEntityOptions<T> {
-  dtos: {
-    create: ClassConstructor<Partial<T>>
-    update: ClassConstructor<Partial<T>>
-  }
-}
+import { OwneableEntityOptions } from '../types/owneable.types'
 
 @Injectable()
 export abstract class OwneableEntityController<T extends OwneableModel, U extends BaseUser> {
