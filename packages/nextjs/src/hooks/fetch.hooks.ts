@@ -38,17 +38,16 @@ export function useFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
   return { data, loading, error }
 }
 
-export function useApiCallback<T>(url: string, options: FetchHookOptions<T> = {}) {
+export function useApiCallback<T>() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<FetchApiError | null>(null)
 
-  const fullUrl = url.startsWith('/') ? process.env.NEXT_PUBLIC_API_ENDPOINT + url : url
-
-  const callback = useCallback(async (): Promise<T | null> => {
+  const callback = useCallback(async (url: string, options: FetchHookOptions<T> = {}): Promise<T | null> => {
     setLoading(true)
     setError(null)
     try {
+      const fullUrl = url.startsWith('/') ? process.env.NEXT_PUBLIC_API_ENDPOINT + url : url
       const res = await fetch(fullUrl, {
         credentials: 'include',
         ...options,
@@ -71,7 +70,7 @@ export function useApiCallback<T>(url: string, options: FetchHookOptions<T> = {}
     } finally {
       setLoading(false)
     }
-  }, [fullUrl, options])
+  }, [])
 
   return { callback, loading, error, success }
 }

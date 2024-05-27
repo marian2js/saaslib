@@ -22,10 +22,10 @@ export function useGetMe<T extends BaseUser = BaseUser>() {
 }
 
 export function useDeleteAvatar() {
-  const { callback, success, loading, error } = useApiCallback<{ ok: true }>('/users/me/avatar', { method: 'DELETE' })
+  const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
 
   const deleteAvatar = async () => {
-    const res = await callback()
+    const res = await callback('/users/me/avatar', { method: 'DELETE' })
     if (res?.ok) {
       const userData = localStorage.getItem('user')
       if (userData) {
