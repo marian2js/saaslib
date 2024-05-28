@@ -3,6 +3,16 @@
 import { cookies } from 'next/headers'
 import { BaseLoggedInUser } from '../types'
 import { fetchApi, fetchWithAuth } from '../utils'
+import { isAccessTokenExpired } from '../utils/auth.utils'
+
+export async function isLoggedIn(): Promise<boolean> {
+  const tokenCookie = cookies().get('jwt')
+  if (!tokenCookie) {
+    return false
+  }
+  const token = JSON.parse(tokenCookie.value).accessToken
+  return !isAccessTokenExpired(token)
+}
 
 export async function passwordSignUp(email: string, password: string) {
   const res = await fetchApi<{ user: any; token: { accessToken: string; refreshToken: string } }>('/auth/signup', {
