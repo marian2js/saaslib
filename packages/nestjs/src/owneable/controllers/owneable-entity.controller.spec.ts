@@ -209,12 +209,12 @@ describe('OwneableEntityController', () => {
     })
   })
 
-  describe('/PUT/:id', () => {
+  describe('/PATCH/:id', () => {
     it('should update the entity', async () => {
       const { user, accessToken } = await createUserToken()
       const entity = await service.create({ owner: user._id, name: 'Old Entity', category: 'Old' })
       const res = await request(app.getHttpServer())
-        .put(`/fake/${entity._id}`)
+        .patch(`/fake/${entity._id}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ name: 'Updated Entity' })
         .expect(200)
@@ -229,7 +229,7 @@ describe('OwneableEntityController', () => {
       const { accessToken } = await createUserToken()
       const nonExistentId = new Types.ObjectId()
       await request(app.getHttpServer())
-        .put(`/fake/${nonExistentId}`)
+        .patch(`/fake/${nonExistentId}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ name: 'Updated Entity' })
         .expect(404)
@@ -242,7 +242,7 @@ describe('OwneableEntityController', () => {
       const { accessToken } = await createUserToken()
       const entity = await service.create({ owner: new Types.ObjectId(), name: 'Not Owned', category: 'Not Owner' })
       await request(app.getHttpServer())
-        .put(`/fake/${entity._id}`)
+        .patch(`/fake/${entity._id}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ name: 'Updated Entity' })
         .expect(404)

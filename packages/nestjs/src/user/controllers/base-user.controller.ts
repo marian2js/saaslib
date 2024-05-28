@@ -1,4 +1,4 @@
-import { BadRequestException, Delete, Get, Injectable, NotFoundException, Put, Req, UseGuards } from '@nestjs/common'
+import { BadRequestException, Delete, Get, Injectable, NotFoundException, Patch, Req, UseGuards } from '@nestjs/common'
 import { ClassConstructor, plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
 import { Request } from 'express'
@@ -43,7 +43,7 @@ export abstract class BaseUserController<U extends BaseUser> {
   }
 
   @UseGuards(UserGuard)
-  @Put('me')
+  @Patch('me')
   async updateMe(@Req() req: Request) {
     const userId = (req.user as { id: string }).id
     const user = await this.baseUserService.findById(userId)

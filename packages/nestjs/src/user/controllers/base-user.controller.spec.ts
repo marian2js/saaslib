@@ -56,12 +56,12 @@ describe('BaseUserController', () => {
     return { user, accessToken }
   }
 
-  describe('/PUT me', () => {
+  describe('/PATCH me', () => {
     it('should update user details successfully', async () => {
       const { user, accessToken } = await createUser({ email: 'test@example.com' })
 
       await request(app.getHttpServer())
-        .put('/users/me')
+        .patch('/users/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ email: 'new@example.com' })
         .expect(200)
@@ -79,7 +79,7 @@ describe('BaseUserController', () => {
       const { accessToken } = await createUser({ email: 'test@example.com', emailVerified: true })
 
       await request(app.getHttpServer())
-        .put('/users/me')
+        .patch('/users/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ email: 'new@example.com' })
         .expect(200)
@@ -94,7 +94,7 @@ describe('BaseUserController', () => {
       const { accessToken } = await createUser({ email: 'test@example.com' })
 
       await request(app.getHttpServer())
-        .put('/users/me')
+        .patch('/users/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ email: 'invalid-email' })
         .expect(400)
@@ -104,7 +104,7 @@ describe('BaseUserController', () => {
       const accessToken = jwtService.sign({ id: new Types.ObjectId().toString() })
 
       await request(app.getHttpServer())
-        .put('/users/me')
+        .patch('/users/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ email: 'new@example.com' })
         .expect(404)

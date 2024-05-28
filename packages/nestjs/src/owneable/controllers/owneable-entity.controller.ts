@@ -6,8 +6,8 @@ import {
   Injectable,
   NotFoundException,
   Param,
+  Patch,
   Post,
-  Put,
   Req,
   UseGuards,
 } from '@nestjs/common'
@@ -87,7 +87,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
   }
 
   @UseGuards(UserGuard)
-  @Put('/:id')
+  @Patch('/:id')
   async update(@Req() req: Request, @Param('id') id: string, @Body() update: Partial<T>) {
     const updateDto = plainToClass(this.options.dtos.update, update)
     const errors = await validate(updateDto)

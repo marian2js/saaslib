@@ -10,7 +10,7 @@ export async function fetchAuthUser<U extends BaseUser>() {
 
 export async function updateUser<U extends BaseUser>(user: Partial<U>) {
   const data = await fetchWithAuth<{ user: U }>(`/users/me`, {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(user),
   })
   return data.user
