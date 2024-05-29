@@ -9,11 +9,11 @@ export function useFetchOwnableItem<T>(entityKey: string, itemId: string) {
   return useFetch<{ item: T }>(`/${entityKey}/${itemId}`, { credentials: 'include' })
 }
 
-export function useCreateOwneableItem(entityKey: string) {
+export function useCreateOwneableItem<CreateDto>(entityKey: string) {
   const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
 
   const createItem = useCallback(
-    async (item: any) => {
+    async (item: CreateDto) => {
       await callback(`/${entityKey}`, {
         method: 'POST',
         body: JSON.stringify(item),
