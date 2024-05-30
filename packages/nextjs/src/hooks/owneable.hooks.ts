@@ -9,12 +9,12 @@ export function useFetchOwnableItem<T>(entityKey: string, itemId: string) {
   return useFetch<{ item: T }>(`/${entityKey}/${itemId}`, { credentials: 'include' })
 }
 
-export function useCreateOwneableItem<CreateDto>(entityKey: string) {
-  const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
+export function useCreateOwneableItem<CreateDto, GetDto>(entityKey: string) {
+  const { callback, success, loading, error } = useApiCallback<{ item: GetDto }>()
 
   const createItem = useCallback(
     async (item: CreateDto) => {
-      await callback(`/${entityKey}`, {
+      const res = await callback(`/${entityKey}`, {
         method: 'POST',
         body: JSON.stringify(item),
         headers: {
@@ -22,6 +22,7 @@ export function useCreateOwneableItem<CreateDto>(entityKey: string) {
         },
         credentials: 'include',
       })
+      return res?.item
     },
     [callback],
   )
@@ -29,7 +30,7 @@ export function useCreateOwneableItem<CreateDto>(entityKey: string) {
   return { createItem, success, loading, error }
 }
 
-export function useUpdateOwnableItem<UpdateDto, T>(entityKey: string) {
+export function useUpdateOwnableItem<UpdateDto>(entityKey: string) {
   const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
 
   const updateItem = useCallback(
@@ -48,7 +49,7 @@ export function useUpdateOwnableItem<UpdateDto, T>(entityKey: string) {
 }
 
 export function useDeleteOwnableItem<T>(entityKey: string) {
-  const { callback, success, loading, error } = useApiCallback<{}>()
+  const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
 
   const deleteItem = useCallback(
     async (itemId: string) => {

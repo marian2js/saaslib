@@ -109,7 +109,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     await this.owneableEntityService.updateOne({ _id: new Types.ObjectId(id) }, entityToUpdate)
     await this.afterUpdate(existing, entityToUpdate)
     return {
-      success: true,
+      ok: true,
     }
   }
 
@@ -137,7 +137,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     await this.owneableEntityService.deleteOne({ _id: entity._id })
     await this.afterDelete(userId, id)
     return {
-      success: true,
+      ok: true,
     }
   }
 

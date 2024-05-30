@@ -218,7 +218,7 @@ describe('OwneableEntityController', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ name: 'Updated Entity' })
         .expect(200)
-      expect(res.body.success).toBe(true)
+      expect(res.body.ok).toBe(true)
 
       const updated = await service.findById(entity._id)
       expect(updated.name).toBe('Updated Entity')
