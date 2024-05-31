@@ -8,6 +8,7 @@ import { SaaslibOptions } from './types/saaslib-options'
 import { LinkedInStrategy } from './user/auth/strategies/linkedin.strategy'
 import { UserProvider, UserProviderSchema } from './user/models/user-provider.model'
 import { UserProviderService } from './user/services/user-provider.service'
+import { StorageService } from './utils/storage/storage.service'
 
 @Global()
 @Module({})
@@ -35,13 +36,14 @@ export class SaaslibModule {
         UserGuard,
         EmailService,
         UserProviderService,
+        StorageService,
 
         // Auth Strategies
         ...(process.env.GOOGLE_CLIENT_ID ? [GoogleStrategy] : []),
         ...(process.env.LINKEDIN_CLIENT_ID ? [LinkedInStrategy] : []),
       ],
       controllers: [],
-      exports: ['SL_OPTIONS', EmailService, UserProviderService],
+      exports: ['SL_OPTIONS', EmailService, UserProviderService, StorageService],
     }
   }
 
