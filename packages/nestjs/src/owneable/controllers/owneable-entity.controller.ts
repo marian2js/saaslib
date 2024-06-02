@@ -15,6 +15,7 @@ import { plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
 import { Request } from 'express'
 import { Types } from 'mongoose'
+import { isPromise } from 'util/types'
 import { BaseUser, BaseUserService, UserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
@@ -36,11 +37,16 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
     const docs = await this.owneableEntityService.findManyByOwner(userId)
     const allowedDocs = docs.filter((doc) => this.owneableEntityService.canView(doc, user))
+    const items = await Promise.all(
+      allowedDocs.map(async (doc) => {
+        const apiObject = this.owneableEntityService.getApiObject(doc, user)
+        return apiObject instanceof Promise ? await apiObject : apiObject
+      }),
+    )
     return {
-      items: allowedDocs.map((doc) => this.owneableEntityService.getApiObject(doc, user)),
+      items,
     }
   }
-
   @UseGuards(UserGuard)
   @Get('/:id')
   async getOne(@Req() req: Request, @Param('id') id: string) {
@@ -54,8 +60,9 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     if (!this.owneableEntityService.canView(doc, user)) {
       throw new NotFoundException()
     }
+    const apiRes = this.owneableEntityService.getApiObject(doc, user)
     return {
-      item: this.owneableEntityService.getApiObject(doc, user),
+      item: isPromise(apiRes) ? await apiRes : apiRes,
     }
   }
 
@@ -73,8 +80,9 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     const entityToCreate = await this.beforeCreate({ ...entity, owner: user._id })
     const created = await this.owneableEntityService.create(entityToCreate)
     await this.afterCreate(created)
+    const apiRes = this.owneableEntityService.getApiObject(created, user)
     return {
-      item: this.owneableEntityService.getApiObject(created, user),
+      item: isPromise(apiRes) ? await apiRes : apiRes,
     }
   }
 

@@ -4,7 +4,7 @@ import { BaseUser } from '../../user/models/base-user.model'
 import { OwneableModel } from '../models/owneable.model'
 
 export abstract class OwneableEntityService<T extends OwneableModel, U extends BaseUser> extends BaseEntityService<T> {
-  abstract getApiObject(entity: T, owner: U): Record<string, unknown>
+  abstract getApiObject(entity: T, owner: U): Record<string, unknown> | Promise<Record<string, unknown>>
 
   async findManyByOwner(ownerId: Types.ObjectId | string, filter?: FilterQuery<T>, options?: QueryOptions<T>) {
     if (typeof ownerId === 'string') {
