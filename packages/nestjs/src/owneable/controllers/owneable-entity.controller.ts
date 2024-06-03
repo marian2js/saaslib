@@ -39,7 +39,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     const allowedDocs = docs.filter((doc) => this.owneableEntityService.canView(doc, user))
     const items = await Promise.all(
       allowedDocs.map(async (doc) => {
-        const apiObject = this.owneableEntityService.getApiObject(doc, user)
+        const apiObject = this.owneableEntityService.getApiObjectForList(doc, user)
         return apiObject instanceof Promise ? await apiObject : apiObject
       }),
     )
