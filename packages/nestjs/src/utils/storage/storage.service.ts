@@ -1,6 +1,13 @@
-import { CreateBucketCommand, HeadBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+  CreateBucketCommand,
+  GetObjectCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, Logger } from '@nestjs/common'
+import { Readable } from 'stream'
 
 @Injectable()
 export class StorageService {
@@ -8,12 +15,14 @@ export class StorageService {
   private s3Client: S3Client
 
   constructor() {
+    const endpoint = process.env.AWS_S3_ENDPOINT
     this.s3Client = new S3Client({
       region: process.env.AWS_S3_REGION,
       credentials: {
         accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
       },
+      ...(endpoint && { endpoint }),
     })
   }
 
@@ -41,6 +50,13 @@ export class StorageService {
     }
   }
 
+  async ensureBucket(bucketName: string): Promise<void> {
+    const exists = await this.bucketExists(bucketName)
+    if (!exists) {
+      await this.createBucket(bucketName)
+    }
+  }
+
   async uploadTextFile(bucketName: string, key: string, text: string): Promise<string> {
     const params = {
       Bucket: bucketName,
@@ -52,10 +68,31 @@ export class StorageService {
     try {
       const command = new PutObjectCommand(params)
       await this.s3Client.send(command)
-      this.logger.log(`File uploaded successfully to ${key} in bucket ${bucketName}`)
+      this.logger.log(`File uploaded to ${bucketName}/${key}`)
       return key
     } catch (error) {
       this.logger.error(`Failed to upload file: ${error.message}`)
+      throw error
+    }
+  }
+
+  async readTextFile(bucketName: string, key: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    })
+
+    try {
+      const { Body } = await this.s3Client.send(command)
+      const readableStream = Body as Readable
+      let data = ''
+      for await (const chunk of readableStream) {
+        data += chunk
+      }
+      this.logger.log(`File read successfully from ${key} in bucket ${bucketName}`)
+      return data
+    } catch (error) {
+      this.logger.error(`Failed to read file: ${error.message}`)
       throw error
     }
   }
