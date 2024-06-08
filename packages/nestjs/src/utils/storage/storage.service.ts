@@ -1,5 +1,6 @@
 import {
   CreateBucketCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   PutObjectCommand,
@@ -124,6 +125,21 @@ export class StorageService {
       return url
     } catch (error) {
       this.logger.error(`Failed to generate pre-signed URL: ${error.message}`)
+      throw error
+    }
+  }
+
+  async deleteFile(bucketName: string, key: string): Promise<void> {
+    const command = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    })
+
+    try {
+      await this.s3Client.send(command)
+      this.logger.log(`File deleted from ${bucketName}/${key}`)
+    } catch (error) {
+      this.logger.error(`Failed to delete file: ${error.message}`)
       throw error
     }
   }
