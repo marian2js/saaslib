@@ -29,7 +29,7 @@ export class EmailService {
     await this.sendTemplateEmail(
       user.email,
       template,
-      { email: user.email, name: user.name ?? user.email.split('@')[0] },
+      { user, email: user.email, name: user.name ?? user.email.split('@')[0] },
       {
         subject: 'Welcome',
         html: `<p>Welcome, ${user.name}!</p>`,
@@ -42,7 +42,7 @@ export class EmailService {
     await this.sendTemplateEmail(
       user.email,
       template,
-      { code },
+      { user, code, link: `${process.env.VERIFY_EMAIL_URL}/?userId=${user._id}&code=${code}` },
       {
         subject: 'Please verify your email',
         html: `<p>Please verify your email with code: ${code}</p>`,
@@ -56,7 +56,7 @@ export class EmailService {
     await this.sendTemplateEmail(
       user.email,
       template,
-      { code },
+      { user, code },
       {
         subject: 'Password Reset Request',
         html: `<p>To reset your password, please click the following link: <a href="${resetUrl}">${resetUrl}</a></p>`,
