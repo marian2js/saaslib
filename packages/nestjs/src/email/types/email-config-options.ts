@@ -4,6 +4,7 @@ export interface EmailTemplate<T> {
   disabled?: boolean
   subject?: (vars: T) => string
   html?: (vars: T) => string
+  handlebarsHtml?: string
 }
 
 export interface EmailConfigOptions {

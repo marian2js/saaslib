@@ -1,5 +1,6 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { Inject, Injectable, Logger } from '@nestjs/common'
+import Handlebars from 'handlebars'
 import { SaaslibOptions } from 'src/types'
 import { BaseUser } from '../../user'
 import { EmailConfigOptions, EmailTemplate } from '../types/email-config-options'
@@ -73,7 +74,14 @@ export class EmailService {
     if (template?.disabled) {
       return
     }
-    await this.sendEmail([to], template?.subject(vars) ?? defaults.subject, template?.html(vars) ?? defaults.html)
+    let htmlEmail: string
+    if (template?.handlebarsHtml) {
+      const hbsTemplate = Handlebars.compile(template.handlebarsHtml)
+      htmlEmail = hbsTemplate(vars)
+    } else {
+      htmlEmail = template?.html(vars) ?? defaults.html
+    }
+    await this.sendEmail([to], template?.subject(vars) ?? defaults.subject, htmlEmail)
   }
 
   async sendEmail(to: string[], subject: string, body: string): Promise<void> {
