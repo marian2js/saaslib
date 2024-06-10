@@ -65,6 +65,16 @@ export async function verifyOAuthCode(code: string) {
   return res.user
 }
 
+export async function verifyEmail(userId: string, code: string) {
+  const res = await fetchApi<{ ok: boolean }>('/auth/verify-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId, code }),
+  })
+}
+
 export async function signOutServer() {
   await fetchWithAuth('/auth/signout', {
     method: 'POST',

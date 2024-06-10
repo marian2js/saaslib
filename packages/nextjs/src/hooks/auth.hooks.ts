@@ -1,6 +1,6 @@
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { signOutServer, verifyOAuthCode } from '../services'
+import { signOutServer, verifyEmail, verifyOAuthCode } from '../services'
 
 export function useOAuthRedirect(code: string | undefined, redirectTo: string = '/') {
   const router = useRouter()
@@ -13,6 +13,22 @@ export function useOAuthRedirect(code: string | undefined, redirectTo: string = 
       }
       const user = await verifyOAuthCode(code)
       localStorage.setItem('user', JSON.stringify(user))
+      router.push(redirectTo)
+    }
+    run()
+  }, [code])
+}
+
+export function useVerifyEmail(userId: string, code: string | undefined, redirectTo: string = '/') {
+  const router = useRouter()
+
+  useEffect(() => {
+    const run = async () => {
+      if (!code) {
+        router.push('/')
+        return
+      }
+      await verifyEmail(userId, code)
       router.push(redirectTo)
     }
     run()
