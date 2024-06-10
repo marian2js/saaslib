@@ -57,7 +57,7 @@ export class EmailService {
     await this.sendTemplateEmail(
       user.email,
       template,
-      { user, code },
+      { user, code, link: `${process.env.RESET_PASSWORD_EMAIL_URL}/?code=${code}` },
       {
         subject: 'Password Reset Request',
         html: `<p>To reset your password, please click the following link: <a href="${resetUrl}">${resetUrl}</a></p>`,
