@@ -16,7 +16,7 @@ import { validate } from 'class-validator'
 import { Request } from 'express'
 import { Types } from 'mongoose'
 import { isPromise } from 'util/types'
-import { BaseUser, BaseUserService, UserGuard } from '../../user'
+import { BaseUser, BaseUserService, UserGuard, OptionalUserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
 import { OwneableEntityOptions } from '../types/owneable.types'
@@ -47,7 +47,8 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
       items,
     }
   }
-  @UseGuards(UserGuard)
+
+  @UseGuards(OptionalUserGuard)
   @Get('/:id')
   async getOne(@Req() req: Request, @Param('id') id: string) {
     const doc = await this.owneableEntityService.findOne({ _id: new Types.ObjectId(id) })
@@ -55,8 +56,8 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
       throw new NotFoundException()
     }
 
-    const userId = (req.user as { id: string }).id
-    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+    const userId = (req.user as { id: string })?.id
+    const user = userId ? await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) }) : null
     if (!this.owneableEntityService.canView(doc, user)) {
       throw new NotFoundException()
     }

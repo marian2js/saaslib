@@ -4,7 +4,7 @@ import { BaseUser } from '../../user/models/base-user.model'
 import { OwneableModel } from '../models/owneable.model'
 
 export abstract class OwneableEntityService<T extends OwneableModel, U extends BaseUser> extends BaseEntityService<T> {
-  abstract getApiObject(entity: T, owner: U): Record<string, unknown> | Promise<Record<string, unknown>>
+  abstract getApiObject(entity: T, owner: U | null): Record<string, unknown> | Promise<Record<string, unknown>>
 
   /**
    * Returns an object for the API list view
@@ -20,8 +20,8 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
     return this.findMany({ ...(filter ?? {}), owner: ownerId }, options)
   }
 
-  canView(entity: T, owner: U) {
-    return entity.owner.equals(owner._id)
+  canView(entity: T, owner: U | null) {
+    return owner && entity.owner.equals(owner._id)
   }
 
   canEdit(entity: T, owner: U) {

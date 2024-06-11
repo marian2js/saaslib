@@ -22,7 +22,7 @@ export async function fetchApi<T>(path: string, options?: RequestInit): Promise<
 export async function fetchWithAuth<T>(path: string, options?: RequestInit): Promise<T> {
   const tokenCookie = cookies().get('jwt')
   if (!tokenCookie) {
-    throw new Error('No token found')
+    return fetchApi<T>(path, options)
   }
   const token = JSON.parse(tokenCookie.value).accessToken
   return fetchApi<T>(path, {
