@@ -1,6 +1,6 @@
 {
   "name": "@saaslib/nextjs",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -13,7 +13,8 @@
     "dev": "tsc -w",
     "build": "tsc",
     "test": "echo \"Error: no test specified\"",
-    "lint": "echo \"Error: not configured\""
+    "lint": "echo \"Error: not configured\"",
+    "prepare": "npm run build"
   },
   "peerDependencies": {
     "jsonwebtoken": "^9.0.2",
