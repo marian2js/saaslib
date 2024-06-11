@@ -106,10 +106,14 @@ export async function refreshAccessToken(userId: string, refreshToken: string): 
 export async function setAuthCookie(token: { accessToken: string; refreshToken: string }, rememberMe: boolean = true) {
   'use server'
 
-  const domain =
-    process.env.NODE_ENV === 'production'
-      ? '.' + process.env.NEXT_PUBLIC_API_ENDPOINT!.replace('https://', '')
-      : 'localhost'
+  let domain: string
+  if (process.env.NODE_ENV === 'production') {
+    const url = new URL(process.env.NEXT_PUBLIC_API_ENDPOINT!)
+    const domainParts = url.hostname.split('.')
+    domain = '.' + domainParts.slice(-2).join('.')
+  } else {
+    domain = 'localhost'
+  }
 
   cookies().set('jwt', JSON.stringify(token), {
     httpOnly: true,
