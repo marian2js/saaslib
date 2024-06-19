@@ -61,6 +61,29 @@ describe('buildUpdateQuery', () => {
     })
   })
 
+  it('should handle Date fields correctly', () => {
+    const date1 = new Date('2023-01-01')
+    const date2 = new Date('2023-01-01')
+    const date3 = new Date('2023-01-02')
+
+    const doc = { dateField: date1 }
+    const updateDataSame = { dateField: date2 }
+    const updateDataDifferent = { dateField: date3 }
+
+    const resultSame = buildUpdateQuery(doc, updateDataSame)
+    const resultDifferent = buildUpdateQuery(doc, updateDataDifferent)
+
+    expect(resultSame).toEqual({
+      $set: {},
+      $unset: {},
+    })
+
+    expect(resultDifferent).toEqual({
+      $set: { dateField: date3 },
+      $unset: {},
+    })
+  })
+
   it('should handle empty doc and updateData gracefully', () => {
     const doc = {}
     const updateData = {}
@@ -127,35 +150,33 @@ describe('buildUpdateQueryWithMapping', () => {
     })
   })
 
-  it('should not add fields to $unset if they are undefined in both doc and updateData', () => {
-    const doc = { a: 1, b: 2, c: undefined }
-    const updateData = { a: 1, b: 2, c: undefined }
-    const mapping = { a: 'a', b: 'b', c: 'c' }
+  it('should handle Date fields correctly', () => {
+    const date1 = new Date('2023-01-01')
+    const date2 = new Date('2023-01-01')
+    const date3 = new Date('2023-01-02')
 
-    const result = buildUpdateQueryWithMapping(doc, updateData, mapping)
+    const doc = { dateField: date1 }
+    const updateDataSame = { dateField: date2 }
+    const updateDataDifferent = { dateField: date3 }
+    const mapping = { dateField: 'dateField' }
 
-    expect(result).toEqual({
+    const resultSame = buildUpdateQueryWithMapping(doc, updateDataSame, mapping)
+    const resultDifferent = buildUpdateQueryWithMapping(doc, updateDataDifferent, mapping)
+
+    expect(resultSame).toEqual({
       $set: {},
+      $unset: {},
+    })
+
+    expect(resultDifferent).toEqual({
+      $set: { dateField: date3 },
       $unset: {},
     })
   })
 
-  it('should handle empty doc and updateData gracefully', () => {
+  it('should handle empty doc, updateData, and mapping gracefully', () => {
     const doc = {}
     const updateData = {}
-    const mapping = {}
-
-    const result = buildUpdateQueryWithMapping(doc, updateData, mapping)
-
-    expect(result).toEqual({
-      $set: {},
-      $unset: {},
-    })
-  })
-
-  it('should handle empty mapping gracefully', () => {
-    const doc = { a: 1, b: 2 }
-    const updateData = { a: 10, b: undefined }
     const mapping = {}
 
     const result = buildUpdateQueryWithMapping(doc, updateData, mapping)

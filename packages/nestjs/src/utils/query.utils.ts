@@ -17,10 +17,13 @@ export function buildUpdateQuery<T>(
 
   Object.keys(updateData).forEach((key) => {
     const keyTyped = key as keyof T
-    if (updateData[keyTyped] === undefined && doc[keyTyped] !== undefined) {
+    const newValue = updateData[keyTyped]
+    const oldValue = doc[keyTyped]
+
+    if (newValue === undefined && oldValue !== undefined) {
       result.$unset[keyTyped] = ''
-    } else if (updateData[keyTyped] !== undefined && doc[keyTyped] !== updateData[keyTyped]) {
-      result.$set[keyTyped] = updateData[keyTyped]
+    } else if (newValue !== undefined && JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+      result.$set[keyTyped] = newValue
     }
   })
 
@@ -49,10 +52,13 @@ export function buildUpdateQueryWithMapping<T>(
   Object.keys(mapping).forEach((key) => {
     const mappedKey = mapping[key]
     if (mappedKey !== undefined) {
-      if (updateData[mappedKey] === undefined && doc[key] !== undefined) {
-        result.$unset[key] = ''
-      } else if (updateData[mappedKey] !== undefined && doc[key] !== updateData[mappedKey]) {
-        result.$set[key] = updateData[mappedKey]
+      const newValue = updateData[mappedKey]
+      const oldValue = doc[key as keyof T]
+
+      if (newValue === undefined && oldValue !== undefined) {
+        result.$unset[key as keyof T] = ''
+      } else if (newValue !== undefined && JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        result.$set[key as keyof T] = newValue
       }
     }
   })
