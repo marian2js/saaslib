@@ -87,6 +87,23 @@ describe('BaseEntityService', () => {
     })
   })
 
+  describe('count', () => {
+    it('should return the correct count without cache', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.create({ name: 'Test3', category: 'B' })
+
+      const countA = await service.count({ category: 'A' })
+      expect(countA).toBe(2)
+
+      const countB = await service.count({ category: 'B' })
+      expect(countB).toBe(1)
+
+      const countAll = await service.count()
+      expect(countAll).toBe(3)
+    })
+  })
+
   describe('create', () => {
     it('should create a new document', async () => {
       const doc = await service.create({ name: 'NewDoc' })
@@ -288,6 +305,29 @@ describe('BaseEntityService', () => {
       expect(cachedAll.find((doc) => doc.name === 'All1')).toBeDefined() // Should return cached version
     })
 
+    it('should use cache when full cache is valid', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll()
+
+      // Modify database directly
+      await service['model'].create({ name: 'Test3', category: 'A' })
+
+      const count = await service.count({ category: 'A' })
+      expect(count).toBe(2)
+    })
+
+    it('should return correct count after cache update', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll()
+
+      await service.create({ name: 'Test3', category: 'A' })
+
+      const count = await service.count({ category: 'A' })
+      expect(count).toBe(3)
+    })
+
     it('should update cache after create', async () => {
       const doc = await service.create({ name: 'NewDoc' })
       expect(service.getCacheSize()).toBe(1)
@@ -450,6 +490,17 @@ describe('BaseEntityService', () => {
 
       const results = await service.findMany({ category: 'A' })
       expect(results.length).toBe(1) // Should return fresh results from database, not cached
+    })
+
+    it('should not use cache when full cache is invalid', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll()
+
+      await service['model'].create({ name: 'Test3', category: 'A' })
+
+      const count = await service.count({ category: 'A' })
+      expect(count).toBe(3)
     })
 
     it('should update cache correctly when performing operations', async () => {

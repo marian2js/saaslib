@@ -67,6 +67,14 @@ export abstract class BaseEntityService<T> {
     return docs
   }
 
+  async count(filter: FilterQuery<T> = {}): Promise<number> {
+    if (this.isCacheEnabled() && this.isFullCacheValid()) {
+      const cachedDocs = this.getCachedDocuments()
+      return cachedDocs.filter(sift(filter)).length
+    }
+    return this.model.countDocuments(filter).exec()
+  }
+
   async create(data: Partial<OmitMethods<T>>): Promise<T> {
     const createdDocument = new this.model(data)
     const savedDoc = (await createdDocument.save()) as T & Document
