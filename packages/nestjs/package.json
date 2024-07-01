@@ -55,7 +55,8 @@
     "passport-jwt": "^4.0.1",
     "passport-linkedin-oauth2": "github:auth0/passport-linkedin-oauth2#8fe01d1",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sift": "^17.1.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
