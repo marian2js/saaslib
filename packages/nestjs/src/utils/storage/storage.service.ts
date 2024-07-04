@@ -98,6 +98,32 @@ export class StorageService {
     }
   }
 
+  async uploadFromUrl(bucketName: string, key: string, url: string): Promise<string> {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file from URL: ${response.statusText}`)
+      }
+
+      const contentType = response.headers.get('content-type') || 'application/octet-stream'
+      const buffer = await response.arrayBuffer()
+      const params = {
+        Bucket: bucketName,
+        Key: key,
+        Body: Buffer.from(buffer),
+        ContentType: contentType,
+      }
+      const command = new PutObjectCommand(params)
+      await this.s3Client.send(command)
+
+      this.logger.log(`File uploaded from URL to ${bucketName}/${key}`)
+      return key
+    } catch (error) {
+      this.logger.error(`Failed to upload file from URL: ${error.message}`)
+      throw error
+    }
+  }
+
   async getPresignedUrl(
     key: string,
     contentType: string,
