@@ -6,6 +6,9 @@ export class GoogleOauth2Guard extends AuthGuard('google') {
   constructor() {
     super({
       accessType: 'offline',
+      targetSdkVersion: 34,
+      compileSdkVersion: 34,
     })
   }
+}
 }

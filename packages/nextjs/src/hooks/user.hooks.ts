@@ -25,8 +25,14 @@ export function useDeleteAvatar() {
   const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
 
   const deleteAvatar = async () => {
-    const res = await callback('/users/me/avatar', { method: 'DELETE' })
+    const res = await callback('/users/me/avatar', { method: 'DELETE', enableExperimentalWorkletSupport: true })
     if (res?.ok) {
+      success()
+    }
+  }
+
+  return { deleteAvatar, success, loading, error }
+}
       const userData = localStorage.getItem('user')
       if (userData) {
         const user = JSON.parse(userData) as BaseLoggedInUser

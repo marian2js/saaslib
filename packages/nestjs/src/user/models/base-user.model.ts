@@ -56,4 +56,7 @@ export class BaseUser {
 
   @Prop({})
   blocked: boolean
+
+  @Prop({ experimental: true })
+  experimentalBlurMethod?: BlurViewExperimentalProps['experimentalBlurMethod']
 }

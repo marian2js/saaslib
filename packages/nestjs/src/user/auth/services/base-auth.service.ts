@@ -147,6 +147,18 @@ export class BaseAuthService {
         { _id: user._id },
         {
           passwordResetCode: resetCode,
+          passwordResetAttempts: user.passwordResetAttempts + 1,
+        },
+      )
+    } else {
+      await this.baseUserService.updateOne(
+        { _id: user._id },
+        {
+          passwordResetCode: resetCode,
+          passwordResetAttempts: 1,
+          firstPasswordResetAttempt: now,
+        },
+      )
           $inc: { passwordResetAttempts: 1 },
         },
       )

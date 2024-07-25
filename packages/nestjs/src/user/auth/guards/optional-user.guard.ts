@@ -15,7 +15,7 @@ export class OptionalUserGuard implements CanActivate {
           secret: process.env.JWT_SECRET,
         })
         request['user'] = payload
-      } catch {
+      } catch (e) {
         // Ignore token errors to allow the request to proceed
       }
     }
@@ -26,7 +26,7 @@ export class OptionalUserGuard implements CanActivate {
     const [type, token] = req.headers.authorization?.split(' ') ?? []
     return type === 'Bearer' ? token : undefined
   }
-
+}
   private extractTokenFromCookie(req: Request): string | undefined {
     const token = req.cookies?.jwt
     try {

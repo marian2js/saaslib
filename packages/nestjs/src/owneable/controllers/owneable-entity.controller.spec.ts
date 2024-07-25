@@ -28,6 +28,7 @@ const FakeModelSchema = SchemaFactory.createForClass(FakeModel)
 
 @Injectable()
 class FakeEntityService extends OwneableEntityService<FakeModel, BaseUser> {
+```typescript
   getApiObject(entity: FakeModel): Record<string, unknown> {
     return {
       name: entity.name,
@@ -49,14 +50,16 @@ class CreateFakeModelDto {
 
   @IsString()
   @IsOptional()
-  category: string
+  category?: string
 }
 
 class UpdateFakeModelDto {
   @IsString()
   @IsOptional()
-  name: string
+  name?: string
 
+
+```
   @IsString()
   @IsOptional()
   category: string
@@ -85,10 +88,12 @@ describe('OwneableEntityController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BaseUserService, FakeEntityService],
+     providers: [BaseUserService, FakeEntityService],
       controllers: [FakeController],
       imports: [...testModuleImports, MongooseModule.forFeature([{ name: FakeModel.name, schema: FakeModelSchema }])],
-    }).compile()
+    }).compile({
+      enableExperimentalWorkletSupport: true,
+    })
 
     app = module.createNestApplication()
     controller = module.get<FakeController>(FakeController)
@@ -216,7 +221,7 @@ describe('OwneableEntityController', () => {
       const res = await request(app.getHttpServer())
         .patch(`/fake/${entity._id}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Updated Entity' })
+        .send({ name: 'Updated Entity', androidId: '1234567890', targetSdkVersion: 34, compileSdkVersion: 34 })
         .expect(200)
       expect(res.body.ok).toBe(true)
 
@@ -231,9 +236,8 @@ describe('OwneableEntityController', () => {
       await request(app.getHttpServer())
         .patch(`/fake/${nonExistentId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Updated Entity' })
+        .send({ name: 'Updated Entity', androidId: '1234567890', targetSdkVersion: 34, compileSdkVersion: 34 })
         .expect(404)
-
       const all = await service.findAll()
       expect(all.length).toBe(0)
     })
@@ -265,6 +269,8 @@ describe('OwneableEntityController', () => {
       expect(res).toBeNull()
 
       const all = await service.findAll()
+    })
+  })
       expect(all.length).toBe(0)
     })
 

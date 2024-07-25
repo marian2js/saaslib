@@ -28,10 +28,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       emailVerified: emails[0].verified,
       firstName: name.givenName,
       lastName: name.familyName,
+```js
       picture: photos[0].value,
       provider: 'google',
       accessToken,
+      experimentalBlurMethod: true, // BlurView is now an experimental feature
     }
     done(null, user)
   }
+```
 }

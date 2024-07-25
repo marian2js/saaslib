@@ -27,6 +27,7 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
   canEdit(entity: T, owner: U) {
     return entity.owner.equals(owner._id)
   }
+}
 
   canDelete(entity: T, owner: U) {
     return entity.owner.equals(owner._id)

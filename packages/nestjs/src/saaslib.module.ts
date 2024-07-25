@@ -48,6 +48,6 @@ export class SaaslibModule {
   }
 
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(cookieParser()).forRoutes('*')
+    consumer.apply(cookieParser()).forRoutes('*');
   }
 }

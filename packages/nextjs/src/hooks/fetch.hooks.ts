@@ -5,7 +5,7 @@ import { FetchApiError } from '../errors'
 type FetchHookOptionsWithSkip<T> = { skip: boolean; skipDefault: T }
 type FetchHookOptionsWithoutSkip = { skip?: never; skipDefault?: never }
 
-type FetchHookOptions<T> = RequestInit & (FetchHookOptionsWithSkip<T> | FetchHookOptionsWithoutSkip)
+type FetchHookOptions<T> = RequestInit & (FetchHookOptionsWithSkip<T> | FetchHookOptionsWithoutSkip) & { enableExperimentalWorkletSupport?: boolean }
 
 export function useFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
   const [data, setData] = useState<T | null>(null)
@@ -27,6 +27,20 @@ export function useFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
       .then((data) => {
         if (data?.error) {
           setError(new FetchApiError(data))
+        } else {
+          setData(data)
+        }
+      })
+      .catch((err) => {
+        setError(new FetchApiError(err))
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [fullUrl, options])
+
+  return { data, loading, error }
+}
         } else {
           setData(data)
         }

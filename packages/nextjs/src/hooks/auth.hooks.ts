@@ -34,6 +34,13 @@ export function useVerifyEmail(userId: string, code: string | undefined, redirec
     run()
   }, [code])
 }
+      }
+      await verifyEmail(userId, code)
+      router.push(redirectTo)
+    }
+    run()
+  }, [code])
+}
 
 export function useSignOut(redirectTo = '/') {
   const [loading, setLoading] = useState(false)

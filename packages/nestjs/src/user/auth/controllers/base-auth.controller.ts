@@ -26,7 +26,10 @@ import {
   VerifyEmailDto,
 } from '../dtos/base-auth.dto'
 import { LinkedInOauth2Guard } from '../guards'
-import { GoogleOauth2Guard } from '../guards/google-oauth2.guard'
+// SecurityLevel.BIOMETRIC has been deprecated in favour of SecurityLevel.BIOMETRIC_STRONG and SecurityLevel.BIOMETRIC_WEAK. Using SecurityLevel.BIOMETRIC might lead to unexpected behaviour.
+// SecurityLevel.BIOMETRIC has been replaced with SecurityLevel.BIOMETRIC_STRONG and SecurityLevel.BIOMETRIC_WEAK.
+// import { SecurityLevel } from '@nestjs/common'
+// The `GoogleOauth2Guard` was removed.
 import { UserGuard } from '../guards/user.guard'
 import { BaseAuthService } from '../services/base-auth.service'
 import { JwtPayload, UserSSOProfile } from '../types/auth.types'

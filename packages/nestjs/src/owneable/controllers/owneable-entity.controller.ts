@@ -26,7 +26,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
   abstract options: OwneableEntityOptions<T>
 
   constructor(
-    protected owneableEntityService: OwneableEntityService<T, U>,
+    protected readonly owneableEntityService: OwneableEntityService<T, U>,
     protected baseUserService: BaseUserService<U>,
   ) {}
 
@@ -118,7 +118,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     await this.owneableEntityService.updateOne({ _id: new Types.ObjectId(id) }, entityToUpdate)
     await this.afterUpdate(existing, entityToUpdate)
     return {
-      ok: true,
+     ok: true,
     }
   }
 
@@ -148,7 +148,8 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     return {
       ok: true,
     }
-  }
+}
+}
 
   async beforeDelete(_userId: string, _id: string) {
     // no-op

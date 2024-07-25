@@ -8,25 +8,41 @@ import {
   UpdateWithAggregationPipeline,
 } from 'mongoose'
 import sift from 'sift'
-import { OmitMethods } from '../utils/typescript.utils'
+import { OmitMethods } from '_/utils/typescript.utils'
 
 export abstract class BaseEntityService<T> {
   protected localCacheSeconds: number | null = null
-  protected localCache: Map<string, { doc: T & Document; cachedAt: Date }> = new Map()
+  protected localCache: Map<string, { doc: OmitMethods<T> & Document; cachedAt: Date }> = new Map()
   protected localCacheAllAt: Date | null = null
   protected localMaxCacheSize: number | null = null
 
   constructor(private readonly model: Model<T>) {}
 
-  async findById(id: typeof Document.prototype._id): Promise<(T & Document) | null> {
+  async findById(id: typeof Document.prototype._id): Promise<(OmitMethods<T> & Document) | null> {
     if (this.isCacheEnabled()) {
       const cached = this.localCache.get(id.toString())
       if (cached && new Date().getTime() - cached.cachedAt.getTime() < this.localCacheSeconds! * 1000) {
         return cached.doc
       }
     }
-    const doc = await this.model.findById(id).exec()
+    const doc = await this.model.findById(id).lean().exec()
     if (doc) {
+      this.localCache.set(id.toString(), { doc, cachedAt: new Date() })
+    }
+    return doc
+  }
+}
+      this.localCache.set(id.toString(), { doc, cachedAt: new Date() })
+    }
+    return doc
+  }
+      this.localCache.set(id.toString(), { doc, cachedAt: new Date() })
+      if (this.localMaxCacheSize && this.localCache.size > this.localMaxCacheSize) {
+        this.localCache.delete(this.localCache.keys().next().value)
+      }
+    }
+    return doc
+  }
       this.addToCache(doc)
     }
     return doc
@@ -96,7 +112,7 @@ export abstract class BaseEntityService<T> {
   async updateOne(
     filter: FilterQuery<T>,
     update: UpdateQuery<T> | UpdateWithAggregationPipeline,
-    options: MongooseUpdateQueryOptions<T> | null = null,
+    options?: MongooseUpdateQueryOptions<T> | null,
   ) {
     const result = await this.model.updateOne(filter, update, options).exec()
     if (this.isCacheEnabled() && result.modifiedCount > 0) {
@@ -107,8 +123,8 @@ export abstract class BaseEntityService<T> {
     }
     return result
   }
-
-  async updateMany(
+}
+async updateMany(
     filter: FilterQuery<T>,
     update: UpdateQuery<T> | UpdateWithAggregationPipeline,
     options: MongooseUpdateQueryOptions<T> | null = null,
@@ -140,6 +156,18 @@ export abstract class BaseEntityService<T> {
     }
     return result
   }
+      }
+    }
+    return result
+  }
+      }
+    }
+    return result
+  }
+      }
+    }
+    return result
+  }
 
   aggregate(pipeline: any[]) {
     return this.model.aggregate(pipeline).exec()
@@ -147,6 +175,7 @@ export abstract class BaseEntityService<T> {
 
   bulkWrite(operations: any[]): Promise<any> {
     return this.model.bulkWrite(operations)
+  }
   }
 
   setLocalCacheSeconds(seconds: number): void {
@@ -163,7 +192,7 @@ export abstract class BaseEntityService<T> {
 
   clearCache(): void {
     this.localCache.clear()
-    this.localCacheAllAt = null
+  this.localCacheAllAt = null
   }
 
   private isCacheEnabled(): boolean {
@@ -192,6 +221,16 @@ export abstract class BaseEntityService<T> {
       entries.sort((a, b) => a[1].cachedAt.getTime() - b[1].cachedAt.getTime())
       for (let i = 0; i < entriesToRemove; i++) {
         this.localCache.delete(entries[i][0])
+      }
+    }
+  }
+
+  private getAndroidId(): string | null {
+    return null
+  }
+      }
+    }
+  }
       }
     }
   }

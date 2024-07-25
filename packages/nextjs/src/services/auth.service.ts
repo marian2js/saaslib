@@ -88,7 +88,6 @@ export async function signOutServer() {
     maxAge: 0,
   })
 }
-
 export async function refreshAccessToken(userId: string, refreshToken: string): Promise<string | null> {
   const res = await fetchApi<{ accessToken?: string }>('/auth/refresh', {
     method: 'POST',
@@ -117,6 +116,11 @@ export async function requestPasswordReset(email: string) {
   await fetchApi('/auth/request-password-reset', {
     method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  })
+}
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ email }),

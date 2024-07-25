@@ -27,6 +27,7 @@ export abstract class BaseUserController<U extends BaseUser> {
   constructor(
     private baseUserService: BaseUserService<U>,
     protected emailService: EmailService,
+  ) { }
   ) {}
 
   @UseGuards(UserGuard)
@@ -82,9 +83,10 @@ export abstract class BaseUserController<U extends BaseUser> {
     if (!user) {
       throw new NotFoundException('User not found')
     }
-    await this.baseUserService.updateById(user._id, { $unset: { avatar: '1' } })
+    await this.baseUserService.updateById(user._id, { $unset: { avatar: 1 } })
     return {
       ok: true,
     }
+  }
   }
 }

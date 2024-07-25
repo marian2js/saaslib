@@ -87,11 +87,12 @@ export class StorageService {
       const { Body } = await this.s3Client.send(command)
       const readableStream = Body as Readable
       let data = ''
-      for await (const chunk of readableStream) {
+      readableStream.on('data', (chunk) => {
         data += chunk
-      }
-      this.logger.log(`File read successfully from ${key} in bucket ${bucketName}`)
-      return data
+      })
+      readableStream.on('end', () => {
+        return data
+      })
     } catch (error) {
       this.logger.error(`Failed to read file: ${error.message}`)
       throw error
@@ -106,6 +107,18 @@ export class StorageService {
       }
 
       const contentType = response.headers.get('content-type') || 'application/octet-stream'
+
+      const readableStream = response.body.getReader()
+      for await (const chunk of readableStream) {
+        data += chunk
+      }
+      this.logger.log(`File read successfully from ${key} in bucket ${bucketName}`)
+      return data
+    } catch (error) {
+      this.logger.error(`Failed to read file: ${error.message}`)
+      throw error
+    }
+  }
       const buffer = await response.arrayBuffer()
       const params = {
         Bucket: bucketName,

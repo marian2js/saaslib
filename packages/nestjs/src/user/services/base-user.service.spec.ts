@@ -58,7 +58,7 @@ describe('BaseUserService', () => {
       expect(users.length).toEqual(2)
     })
   })
-
+```
   describe('findAll', () => {
     it('should return all users', async () => {
       await service.create({ email: 'user3@example.com' })
@@ -88,6 +88,8 @@ describe('BaseUserService', () => {
     })
   })
 
+```
+
   describe('updateMany', () => {
     // TODO
   })
@@ -115,6 +117,28 @@ describe('BaseUserService', () => {
     it('should perform bulk operations', async () => {
       const bulkOps = [
         { insertOne: { document: { email: 'bulk1@example.com' } } },
+        { updateOne: { filter: { email: 'bulk2@example.com' }, update: { $set: { email: 'bulk2-updated@example.com' } } } },
+        { deleteOne: { filter: { email: 'bulk3@example.com' } } },
+      ]
+      const bulkResult = await service.bulkWrite(bulkOps)
+      expect(bulkResult.insertedCount).toEqual(1)
+      expect(bulkResult.modifiedCount).toEqual(1)
+      expect(bulkResult.deletedCount).toEqual(1)
+    })
+  })
+
+```
+        { updateOne: { filter: { email: 'bulk2@example.com' }, update: { $set: { email: 'bulk2-updated@example.com' } } } },
+        { deleteOne: { filter: { email: 'bulk3@example.com' } } },
+      ]
+      const bulkResult = await service.bulkWrite(bulkOps)
+      expect(bulkResult.insertedCount).toEqual(1)
+      expect(bulkResult.modifiedCount).toEqual(1)
+      expect(bulkResult.deletedCount).toEqual(1)
+    })
+  })
+
+```
         { insertOne: { document: { email: 'bulk2@example.com' } } },
       ]
       const result = await service.bulkWrite(bulkOps)

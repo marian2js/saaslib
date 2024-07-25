@@ -29,6 +29,8 @@ export function useCreateOwneableItem<CreateDto, GetDto>(entityKey: string) {
 
   return { createItem, success, loading, error }
 }
+  return { createItem, success, loading, error }
+}
 
 export function useUpdateOwnableItem<UpdateDto>(entityKey: string) {
   const { callback, success, loading, error } = useApiCallback<{ ok: true }>()

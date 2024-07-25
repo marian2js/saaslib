@@ -28,10 +28,10 @@ describe('BaseUserController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BaseUserService, JwtService],
+     providers: [BaseUserService, JwtService],
       controllers: [UserController],
       imports: testModuleImports,
-    }).compile()
+    }).compile({ enableExperimentalWorkletSupport: true })
 
     app = module.createNestApplication()
     controller = module.get<UserController>(UserController)
@@ -88,7 +88,7 @@ describe('BaseUserController', () => {
         })
 
       expect(emailService.sendVerificationEmail).toHaveBeenCalled()
-    })
+)
 
     it('should return 400 for invalid email format', async () => {
       const { accessToken } = await createUser({ email: 'test@example.com' })
@@ -108,6 +108,27 @@ describe('BaseUserController', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ email: 'new@example.com' })
         .expect(404)
+    })
+
+    it('should return 400 if user does not have an avatar', async () => {
+      const { user, accessToken } = await createUser({ email: 'test@example.com' })
+
+      await request(app.getHttpServer())
+        .delete(`/users/me/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(400)
+    })
+    })
+
+    it('should return 400 if user does not have an avatar', async () => {
+      const { user, accessToken } = await createUser({ email: 'test@example.com' })
+
+      await request(app.getHttpServer())
+        .delete(`/users/me/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(400)
+    })
+    })
     })
   })
 

@@ -7,7 +7,7 @@ export class UserGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest()
+    const request = context.switchToHttp().getRequest<Request>()
     const token = this.extractTokenFromHeader(request) || this.extractTokenFromCookie(request)
     if (!token) {
       return false
@@ -16,7 +16,7 @@ export class UserGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       })
-      request['user'] = payload
+      request.user = payload
     } catch {
       return false
     }
@@ -27,6 +27,7 @@ export class UserGuard implements CanActivate {
     const [type, token] = req.headers.authorization?.split(' ') ?? []
     return type === 'Bearer' ? token : undefined
   }
+}
 
   private extractTokenFromCookie(req: Request): string | undefined {
     const token = req.cookies?.jwt

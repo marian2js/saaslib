@@ -11,6 +11,8 @@ export const testModuleImports = [
     jwt: { secretOrPrivateKey: 'test' },
     email: { from: 'test@example.com', templates: {} },
   }),
-  MongooseModule.forRoot(global.__MONGO_URI__),
+  MongooseModule.forRoot(global.__MONGO_URI__, { useNewUrlParser: true, useUnifiedTopology: true }),
   MongooseModule.forFeature([{ name: BaseUser.name, schema: BaseUserSchema }]),
+]
+]
 ]

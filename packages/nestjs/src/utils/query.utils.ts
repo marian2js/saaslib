@@ -20,13 +20,17 @@ export function buildUpdateQuery<T>(
     const newValue = updateData[keyTyped]
     const oldValue = doc[keyTyped]
 
-    if (newValue === undefined && oldValue !== undefined) {
-      result.$unset[keyTyped] = ''
-    } else if (newValue !== undefined && JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+    if (newValue === undefined) {
+      if (oldValue !== undefined) {
+        result.$unset[keyTyped] = ''
+      }
+    } else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
       result.$set[keyTyped] = newValue
     }
   })
 
+  return result
+}
   return result
 }
 
