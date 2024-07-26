@@ -43,10 +43,7 @@ describe('buildUpdateQuery', () => {
 
     const result = buildUpdateQuery(doc, updateData)
 
-    expect(result).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(result).toEqual(null)
   })
 
   it('should not add fields to $unset if they are undefined in both doc and updateData', () => {
@@ -55,10 +52,7 @@ describe('buildUpdateQuery', () => {
 
     const result = buildUpdateQuery(doc, updateData)
 
-    expect(result).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(result).toEqual(null)
   })
 
   it('should handle Date fields correctly', () => {
@@ -73,10 +67,7 @@ describe('buildUpdateQuery', () => {
     const resultSame = buildUpdateQuery(doc, updateDataSame)
     const resultDifferent = buildUpdateQuery(doc, updateDataDifferent)
 
-    expect(resultSame).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(resultSame).toEqual(null)
 
     expect(resultDifferent).toEqual({
       $set: { dateField: date3 },
@@ -90,10 +81,7 @@ describe('buildUpdateQuery', () => {
 
     const result = buildUpdateQuery(doc, updateData)
 
-    expect(result).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(result).toEqual(null)
   })
 })
 
@@ -144,10 +132,7 @@ describe('buildUpdateQueryWithMapping', () => {
 
     const result = buildUpdateQueryWithMapping(doc, updateData, mapping)
 
-    expect(result).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(result).toEqual(null)
   })
 
   it('should handle Date fields correctly', () => {
@@ -163,10 +148,7 @@ describe('buildUpdateQueryWithMapping', () => {
     const resultSame = buildUpdateQueryWithMapping(doc, updateDataSame, mapping)
     const resultDifferent = buildUpdateQueryWithMapping(doc, updateDataDifferent, mapping)
 
-    expect(resultSame).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(resultSame).toEqual(null)
 
     expect(resultDifferent).toEqual({
       $set: { dateField: date3 },
@@ -181,9 +163,6 @@ describe('buildUpdateQueryWithMapping', () => {
 
     const result = buildUpdateQueryWithMapping(doc, updateData, mapping)
 
-    expect(result).toEqual({
-      $set: {},
-      $unset: {},
-    })
+    expect(result).toEqual(null)
   })
 })

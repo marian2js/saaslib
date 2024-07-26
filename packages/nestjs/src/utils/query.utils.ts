@@ -27,6 +27,10 @@ export function buildUpdateQuery<T>(
     }
   })
 
+  if (Object.keys(result.$set).length === 0 && Object.keys(result.$unset).length === 0) {
+    return null
+  }
+
   return result
 }
 
@@ -62,6 +66,10 @@ export function buildUpdateQueryWithMapping<T>(
       }
     }
   })
+
+  if (Object.keys(result.$set).length === 0 && Object.keys(result.$unset).length === 0) {
+    return null
+  }
 
   return result
 }
