@@ -1,4 +1,4 @@
-import { buildUpdateQuery, buildUpdateQueryWithMapping } from './query.utils'
+import { buildUpdateQuery, buildUpdateQueryWithMapping, buildUpdateQueryWithoutReplace } from './query.utils'
 
 describe('buildUpdateQuery', () => {
   it('should add fields to $set if they are different in updateData', () => {
@@ -164,5 +164,83 @@ describe('buildUpdateQueryWithMapping', () => {
     const result = buildUpdateQueryWithMapping(doc, updateData, mapping)
 
     expect(result).toEqual(null)
+  })
+})
+
+describe('buildUpdateQueryWithoutReplace', () => {
+  it('should add fields to $set if they are null or undefined in doc', () => {
+    const doc = { a: 1, b: null, c: undefined }
+    const updateData = { a: 10, b: 2, c: 3, d: 4 }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual({
+      $set: { b: 2, c: 3, d: 4 },
+    })
+  })
+
+  it('should not add fields to $set if they are already defined in doc', () => {
+    const doc = { a: 1, b: 2, c: 3 }
+    const updateData = { a: 10, b: 20, c: 30, d: 40 }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual({
+      $set: { d: 40 },
+    })
+  })
+
+  it('should return null if no fields need to be updated', () => {
+    const doc = { a: 1, b: 2, c: 3 }
+    const updateData = { a: 10, b: 20, c: 30 }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual(null)
+  })
+
+  it('should handle Date fields correctly', () => {
+    const date1 = new Date('2023-01-02')
+
+    const doc = { dateField: null }
+    const updateData = { dateField: date1 }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual({
+      $set: { dateField: date1 },
+    })
+  })
+
+  it('should not update Date fields if already set in doc', () => {
+    const date1 = new Date('2023-01-01')
+    const date2 = new Date('2023-01-02')
+
+    const doc = { dateField: date1 }
+    const updateData = { dateField: date2 }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual(null)
+  })
+
+  it('should handle empty doc and updateData gracefully', () => {
+    const doc = {}
+    const updateData = {}
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual(null)
+  })
+
+  it('should handle mixed scenarios correctly', () => {
+    const doc = { a: 1, b: null, c: undefined, d: 4 }
+    const updateData = { a: 10, b: 2, c: 3, d: 40, e: 5 }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData)
+
+    expect(result).toEqual({
+      $set: { b: 2, c: 3, e: 5 },
+    })
   })
 })

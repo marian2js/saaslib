@@ -73,3 +73,32 @@ export function buildUpdateQueryWithMapping<T>(
 
   return result
 }
+
+/**
+ * Generates a MongoDB update query that only sets values for fields that are null or undefined
+ * in the original document. This function is designed for partial updates without replacing
+ * existing non-null values.
+ *
+ * @param doc - The original document from the database.
+ * @param updateData - The new data containing potential updates.
+ * @returns An object with a $set property for MongoDB updates, or null if no updates are needed.
+ */
+export function buildUpdateQueryWithoutReplace<T>(doc: T, updateData: Partial<T>): { $set: Partial<T> } | null {
+  const result: { $set: Partial<T> } = { $set: {} }
+
+  Object.keys(updateData).forEach((key) => {
+    const keyTyped = key as keyof T
+    const newValue = updateData[keyTyped]
+    const oldValue = doc[keyTyped]
+
+    if (newValue !== undefined && (oldValue === null || oldValue === undefined)) {
+      result.$set[keyTyped] = newValue
+    }
+  })
+
+  if (Object.keys(result.$set).length === 0) {
+    return null
+  }
+
+  return result
+}
