@@ -4,12 +4,60 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { FetchApiError } from '../errors'
 
-export async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}${path}`, {
-    ...(options ?? {}),
-    cache: options?.cache ?? options?.next?.revalidate ? undefined : 'no-store',
-  })
-  const data = await res.json()
+export type FetchApiOptions = RequestInit & {
+  maxRetries?: number
+  initialDelayMs?: number
+  maxDelayMs?: number
+  backoffMultiplier?: number
+}
+
+export async function fetchWithRetry(url: string, options: FetchApiOptions): Promise<Response> {
+  let lastError: Error | null = null
+  const maxRetries = options.maxRetries ?? 0
+  const initialDelay = options.initialDelayMs ?? 0
+  const maxDelay = options.maxDelayMs ?? 10000
+  const backoffMultiplier = options.backoffMultiplier ?? 1.2
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        cache: options.cache ?? options.next?.revalidate ? undefined : 'no-store',
+      })
+
+      if (response.ok) {
+        return response
+      }
+
+      // Only retry for 5xx errors
+      if (response.status < 500 || response.status >= 600) {
+        return response
+      }
+
+      lastError = new Error(`HTTP error! status: ${response.status}`)
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+    }
+
+    if (attempt < maxRetries) {
+      let delay: number
+      if (attempt === 0) {
+        delay = initialDelay
+      } else {
+        delay = Math.min(initialDelay * Math.pow(backoffMultiplier, attempt), maxDelay)
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+
+  throw lastError || new Error('Failed to fetch after retries')
+}
+
+export async function fetchApi<T>(path: string, options?: FetchApiOptions): Promise<T> {
+  const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}${path}`
+  const response = await fetchWithRetry(url, options || {})
+  const data = await response.json()
+
   if (data?.error) {
     if (data.statusCode === 404) {
       notFound()
@@ -19,7 +67,7 @@ export async function fetchApi<T>(path: string, options?: RequestInit): Promise<
   return data
 }
 
-export async function fetchWithAuth<T>(path: string, options?: RequestInit): Promise<T> {
+export async function fetchWithAuth<T>(path: string, options?: FetchApiOptions): Promise<T> {
   const tokenCookie = cookies().get('jwt')
   if (!tokenCookie) {
     return fetchApi<T>(path, options)
