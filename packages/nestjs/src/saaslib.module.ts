@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { ScheduleModule } from '@nestjs/schedule'
 import * as cookieParser from 'cookie-parser'
 import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
-import { EnvIntervalExplorer } from './common/env-interval/env-interval.explorer'
+import { EnvScheduleExplorer } from './common/env-schedule/env-schedule.explorer'
 import { SaaslibOptions } from './types/saaslib-options'
 import { LinkedInStrategy } from './user/auth/strategies/linkedin.strategy'
 import { UserProvider, UserProviderSchema } from './user/models/user-provider.model'
@@ -48,7 +48,7 @@ export class SaaslibModule {
         ...(process.env.LINKEDIN_CLIENT_ID ? [LinkedInStrategy] : []),
 
         // Utils
-        EnvIntervalExplorer,
+        EnvScheduleExplorer,
       ],
       controllers: [],
       exports: ['SL_OPTIONS', EmailService, UserProviderService, StorageService],
