@@ -1,9 +1,11 @@
 import { DynamicModule, Global, MiddlewareConsumer, Module, ValidationPipe } from '@nestjs/common'
-import { APP_FILTER, APP_PIPE } from '@nestjs/core'
+import { APP_FILTER, APP_PIPE, DiscoveryModule } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
+import { ScheduleModule } from '@nestjs/schedule'
 import * as cookieParser from 'cookie-parser'
 import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
+import { EnvIntervalExplorer } from './common/env-interval/env-interval.explorer'
 import { SaaslibOptions } from './types/saaslib-options'
 import { LinkedInStrategy } from './user/auth/strategies/linkedin.strategy'
 import { UserProvider, UserProviderSchema } from './user/models/user-provider.model'
@@ -19,6 +21,9 @@ export class SaaslibModule {
       imports: [
         JwtModule.register(options.jwt),
         MongooseModule.forFeature([{ name: UserProvider.name, schema: UserProviderSchema }]),
+
+        ScheduleModule.forRoot(),
+        DiscoveryModule,
       ],
       providers: [
         {
@@ -41,6 +46,9 @@ export class SaaslibModule {
         // Auth Strategies
         ...(process.env.GOOGLE_CLIENT_ID ? [GoogleStrategy] : []),
         ...(process.env.LINKEDIN_CLIENT_ID ? [LinkedInStrategy] : []),
+
+        // Utils
+        EnvIntervalExplorer,
       ],
       controllers: [],
       exports: ['SL_OPTIONS', EmailService, UserProviderService, StorageService],

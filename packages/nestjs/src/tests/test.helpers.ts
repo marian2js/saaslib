@@ -1,5 +1,7 @@
+import { DiscoveryModule } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule, SchemaFactory } from '@nestjs/mongoose'
+import { ScheduleModule } from '@nestjs/schedule'
 import { SaaslibModule } from 'src/saaslib.module'
 import { BaseUser } from 'src/user'
 
@@ -13,4 +15,6 @@ export const testModuleImports = [
   }),
   MongooseModule.forRoot(global.__MONGO_URI__),
   MongooseModule.forFeature([{ name: BaseUser.name, schema: BaseUserSchema }]),
+  ScheduleModule.forRoot(),
+  DiscoveryModule,
 ]
