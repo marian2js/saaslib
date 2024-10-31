@@ -1,15 +1,21 @@
+interface BuildUpdateQueryOptions {
+  ignoreNullValues?: boolean
+}
+
 /**
  * Generates a MongoDB update based on the differences between the original document (doc) and the new
  * update data (updateData). It can be used for both a single update and a bulk update.
  *
  * @param doc - The original document from the database.
  * @param updateData - The new data containing updated values.
- * @returns An object containing $set and $unset properties for MongoDB updates.
+ * @param options - Configuration options for building the update query
+ * @returns An object containing $set and $unset properties for MongoDB updates, or null if no changes
  */
 export function buildUpdateQuery<T>(
   doc: T,
   updateData: Partial<T>,
-): { $set: Partial<T>; $unset: Partial<Record<keyof T, ''>> } {
+  options: BuildUpdateQueryOptions = {},
+): { $set: Partial<T>; $unset: Partial<Record<keyof T, ''>> } | null {
   const result = {
     $set: {} as Partial<T>,
     $unset: {} as Partial<Record<keyof T, ''>>,
@@ -22,7 +28,11 @@ export function buildUpdateQuery<T>(
 
     if (newValue === undefined && oldValue !== undefined) {
       result.$unset[keyTyped] = ''
-    } else if (newValue !== undefined && JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+    } else if (
+      newValue !== undefined &&
+      (!options.ignoreNullValues || newValue !== null) &&
+      JSON.stringify(oldValue) !== JSON.stringify(newValue)
+    ) {
       result.$set[keyTyped] = newValue
     }
   })
@@ -41,13 +51,15 @@ export function buildUpdateQuery<T>(
  * @param doc - The original document from the database.
  * @param updateData - The new data containing updated values.
  * @param mapping - An object mapping the keys of the original document to the keys in the update data.
- * @returns An object containing $set and $unset properties for MongoDB updates.
+ * @param options - Configuration options for building the update query
+ * @returns An object containing $set and $unset properties for MongoDB updates, or null if no changes
  */
 export function buildUpdateQueryWithMapping<T>(
   doc: T,
   updateData: Record<string, any>,
   mapping: Partial<Record<keyof T, string>>,
-): { $set: Partial<T>; $unset: Partial<Record<keyof T, ''>> } {
+  options: BuildUpdateQueryOptions = {},
+): { $set: Partial<T>; $unset: Partial<Record<keyof T, ''>> } | null {
   const result = {
     $set: {} as Partial<T>,
     $unset: {} as Partial<Record<keyof T, ''>>,
@@ -61,7 +73,11 @@ export function buildUpdateQueryWithMapping<T>(
 
       if (newValue === undefined && oldValue !== undefined) {
         result.$unset[key as keyof T] = ''
-      } else if (newValue !== undefined && JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+      } else if (
+        newValue !== undefined &&
+        (!options.ignoreNullValues || newValue !== null) &&
+        JSON.stringify(oldValue) !== JSON.stringify(newValue)
+      ) {
         result.$set[key as keyof T] = newValue
       }
     }
@@ -81,9 +97,14 @@ export function buildUpdateQueryWithMapping<T>(
  *
  * @param doc - The original document from the database.
  * @param updateData - The new data containing potential updates.
+ * @param options - Configuration options for building the update query
  * @returns An object with a $set property for MongoDB updates, or null if no updates are needed.
  */
-export function buildUpdateQueryWithoutReplace<T>(doc: T, updateData: Partial<T>): { $set: Partial<T> } | null {
+export function buildUpdateQueryWithoutReplace<T>(
+  doc: T,
+  updateData: Partial<T>,
+  options: BuildUpdateQueryOptions = {},
+): { $set: Partial<T> } | null {
   const result: { $set: Partial<T> } = { $set: {} }
 
   Object.keys(updateData).forEach((key) => {
@@ -91,7 +112,11 @@ export function buildUpdateQueryWithoutReplace<T>(doc: T, updateData: Partial<T>
     const newValue = updateData[keyTyped]
     const oldValue = doc[keyTyped]
 
-    if (newValue !== undefined && (oldValue === null || oldValue === undefined)) {
+    if (
+      newValue !== undefined &&
+      (!options.ignoreNullValues || newValue !== null) &&
+      (oldValue === null || oldValue === undefined)
+    ) {
       result.$set[keyTyped] = newValue
     }
   })

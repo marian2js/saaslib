@@ -83,6 +83,18 @@ describe('buildUpdateQuery', () => {
 
     expect(result).toEqual(null)
   })
+
+  it('should ignore null values when ignoreNullValues is true', () => {
+    const doc = { a: 1, b: 2, c: 3 }
+    const updateData = { a: 10, b: null, c: null }
+
+    const result = buildUpdateQuery(doc, updateData, { ignoreNullValues: true })
+
+    expect(result).toEqual({
+      $set: { a: 10 },
+      $unset: {},
+    })
+  })
 })
 
 describe('buildUpdateQueryWithMapping', () => {
@@ -165,6 +177,19 @@ describe('buildUpdateQueryWithMapping', () => {
 
     expect(result).toEqual(null)
   })
+
+  it('should ignore null values when ignoreNullValues is true', () => {
+    const doc = { a: 1, b: 2, c: 3 }
+    const updateData = { a: 10, b: null, c: null }
+    const mapping = { a: 'a', b: 'b', c: 'c' }
+
+    const result = buildUpdateQueryWithMapping(doc, updateData, mapping, { ignoreNullValues: true })
+
+    expect(result).toEqual({
+      $set: { a: 10 },
+      $unset: {},
+    })
+  })
 })
 
 describe('buildUpdateQueryWithoutReplace', () => {
@@ -242,5 +267,14 @@ describe('buildUpdateQueryWithoutReplace', () => {
     expect(result).toEqual({
       $set: { b: 2, c: 3, e: 5 },
     })
+  })
+
+  it('should ignore null values when ignoreNullValues is true', () => {
+    const doc = { a: 1, b: null, c: undefined }
+    const updateData = { a: 10, b: null, c: null }
+
+    const result = buildUpdateQueryWithoutReplace(doc, updateData, { ignoreNullValues: true })
+
+    expect(result).toEqual(null)
   })
 })
