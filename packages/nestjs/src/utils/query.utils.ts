@@ -37,7 +37,13 @@ export function buildUpdateQuery<T>(
     }
   })
 
-  if (Object.keys(result.$set).length === 0 && Object.keys(result.$unset).length === 0) {
+  if (!Object.keys(result.$set).length) {
+    delete result.$set
+  }
+  if (!Object.keys(result.$unset).length) {
+    delete result.$unset
+  }
+  if (!result.$set && !result.$unset) {
     return null
   }
 
@@ -83,7 +89,13 @@ export function buildUpdateQueryWithMapping<T>(
     }
   })
 
-  if (Object.keys(result.$set).length === 0 && Object.keys(result.$unset).length === 0) {
+  if (!Object.keys(result.$set).length) {
+    delete result.$set
+  }
+  if (!Object.keys(result.$unset).length) {
+    delete result.$unset
+  }
+  if (!result.$set && !result.$unset) {
     return null
   }
 

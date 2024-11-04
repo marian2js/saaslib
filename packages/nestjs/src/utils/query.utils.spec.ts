@@ -9,7 +9,6 @@ describe('buildUpdateQuery', () => {
 
     expect(result).toEqual({
       $set: { a: 10, d: 4 },
-      $unset: {},
     })
   })
 
@@ -20,7 +19,6 @@ describe('buildUpdateQuery', () => {
     const result = buildUpdateQuery(doc, updateData)
 
     expect(result).toEqual({
-      $set: {},
       $unset: { a: '', c: '' },
     })
   })
@@ -71,7 +69,6 @@ describe('buildUpdateQuery', () => {
 
     expect(resultDifferent).toEqual({
       $set: { dateField: date3 },
-      $unset: {},
     })
   })
 
@@ -92,7 +89,6 @@ describe('buildUpdateQuery', () => {
 
     expect(result).toEqual({
       $set: { a: 10 },
-      $unset: {},
     })
   })
 })
@@ -107,7 +103,6 @@ describe('buildUpdateQueryWithMapping', () => {
 
     expect(result).toEqual({
       $set: { a: 10, d: 4 },
-      $unset: {},
     })
   })
 
@@ -119,7 +114,6 @@ describe('buildUpdateQueryWithMapping', () => {
     const result = buildUpdateQueryWithMapping(doc, updateData, mapping)
 
     expect(result).toEqual({
-      $set: {},
       $unset: { a: '', c: '' },
     })
   })
@@ -164,7 +158,6 @@ describe('buildUpdateQueryWithMapping', () => {
 
     expect(resultDifferent).toEqual({
       $set: { dateField: date3 },
-      $unset: {},
     })
   })
 
@@ -187,7 +180,6 @@ describe('buildUpdateQueryWithMapping', () => {
 
     expect(result).toEqual({
       $set: { a: 10 },
-      $unset: {},
     })
   })
 })
