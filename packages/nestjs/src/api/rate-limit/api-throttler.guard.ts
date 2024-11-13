@@ -47,6 +47,10 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     if (authHeader) {
       return authHeader
     }
+    const apiKeyHeader = req.headers['x-api-key']
+    if (apiKeyHeader) {
+      return apiKeyHeader
+    }
 
     // Check query parameter
     const queryApiKey = req.query?.apikey
