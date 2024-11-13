@@ -23,6 +23,12 @@ export async function fetchWithRetry(url: string, options: FetchApiOptions): Pro
       const response = await fetch(url, {
         ...options,
         cache: options.cache ?? options.next?.revalidate ? undefined : 'no-store',
+        headers: {
+          ...options.headers,
+          ...(process.env.API_KEY && {
+            'x-api-key': process.env.API_KEY,
+          }),
+        },
       })
 
       if (response.ok) {
