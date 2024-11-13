@@ -6,7 +6,7 @@ export type ApiKeyDocument = HydratedDocument<ApiKey>
 @Schema()
 export class ApiKey {
   @Prop({ type: Types.ObjectId, ref: 'User' })
-  userId: Types.ObjectId
+  user: Types.ObjectId
 
   @Prop({ unique: true, index: true })
   key: string

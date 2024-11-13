@@ -29,6 +29,8 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
       if (typeof apiKey.ttl === 'number') {
         requestProps.ttl = apiKey.ttl
       }
+    } else if (apiKeyString) {
+      return false
     }
 
     return super.handleRequest(requestProps)
