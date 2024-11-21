@@ -277,17 +277,53 @@ describe('BaseEntityService', () => {
       expect(results.length).toBe(2) // Should return cached results
     })
 
-    it('should not use cache for findMany when options are provided', async () => {
+    it('should use cache for findMany with supported options (sort)', async () => {
       await service.create({ name: 'Test1', category: 'A' })
       await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll() // Populate cache
 
-      await service.findAll() // Populate full cache
-
-      // Modify a document directly in DB
       await service['model'].updateOne({ name: 'Test1' }, { $set: { category: 'B' } })
 
       const results = await service.findMany({ category: 'A' }, { sort: { name: 1 } })
-      expect(results.length).toBe(1) // Should return fresh results from database
+      expect(results.length).toBe(2) // Returns cached results
+      expect(results[0].name).toBe('Test1')
+      expect(results[1].name).toBe('Test2')
+    })
+
+    it('should use cache for findMany with supported options (limit)', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll() // Populate cache
+
+      await service['model'].updateMany({}, { $set: { category: 'B' } })
+
+      const results = await service.findMany({ category: 'A' }, { limit: 1 })
+      expect(results.length).toBe(1)
+      expect(results[0].category).toBe('A') // Should use cached value
+    })
+
+    it('should use cache for findMany with supported options (skip)', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll() // Populate cache
+
+      await service['model'].updateMany({}, { $set: { category: 'B' } })
+
+      const results = await service.findMany({ category: 'A' }, { skip: 1 })
+      expect(results.length).toBe(1)
+      expect(results[0].category).toBe('A')
+    })
+
+    it('should not use cache for findMany with unsupported options', async () => {
+      await service.create({ name: 'Test1', category: 'A' })
+      await service.create({ name: 'Test2', category: 'A' })
+      await service.findAll() // Populate cache
+
+      await service['model'].updateOne({ name: 'Test1' }, { $set: { category: 'B' } })
+
+      const results = await service.findMany({ category: 'A' }, { select: { name: 1 } })
+      expect(results.length).toBe(1) // Fresh DB results
+      expect(results[0].name).toBe('Test2')
     })
 
     it('should cache all documents after findAll', async () => {

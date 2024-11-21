@@ -8,6 +8,7 @@ import {
   UpdateWithAggregationPipeline,
 } from 'mongoose'
 import sift from 'sift'
+import { getNestedValue } from 'src/utils/object.utils'
 import { OmitMethods } from '../utils/typescript.utils'
 
 export abstract class BaseEntityService<T> {
@@ -46,11 +47,25 @@ export abstract class BaseEntityService<T> {
   }
 
   async findMany(filter: FilterQuery<T>, options?: QueryOptions<T>): Promise<(T & Document)[]> {
-    // cache is not supported when using options
-    if (this.isCacheEnabled() && this.isFullCacheValid() && !Object.keys(options ?? {}).length) {
-      const cachedDocs = this.getCachedDocuments()
-      return cachedDocs.filter(sift(filter))
+    // Cache is only supported for these options, otherwise we skip it
+    const isCacheSupported = !options || Object.keys(options).every((key) => ['sort', 'limit', 'skip'].includes(key))
+
+    if (this.isCacheEnabled() && this.isFullCacheValid() && isCacheSupported) {
+      let cachedDocs = this.getCachedDocuments().filter(sift(filter))
+
+      if (options?.sort) {
+        cachedDocs = this.applySortToCache(cachedDocs, options.sort)
+      }
+      if (options?.skip) {
+        cachedDocs = cachedDocs.slice(options.skip)
+      }
+      if (options?.limit) {
+        cachedDocs = cachedDocs.slice(0, options.limit)
+      }
+
+      return cachedDocs
     }
+
     const docs = await this.model.find(filter, null, options).exec()
     docs.forEach((doc) => this.addToCache(doc))
     return docs
@@ -210,5 +225,18 @@ export abstract class BaseEntityService<T> {
     return Array.from(this.localCache.values())
       .filter(({ cachedAt }) => now - cachedAt.getTime() < this.localCacheSeconds! * 1000)
       .map(({ doc }) => doc)
+  }
+
+  private applySortToCache(docs: (T & Document)[], sort: Record<string, 1 | -1>): (T & Document)[] {
+    return [...docs].sort((a, b) => {
+      for (const [field, order] of Object.entries(sort)) {
+        const aVal = getNestedValue(a, field)
+        const bVal = getNestedValue(b, field)
+
+        if (aVal === bVal) continue
+        return aVal > bVal ? order : -order
+      }
+      return 0
+    })
   }
 }
