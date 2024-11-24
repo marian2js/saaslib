@@ -1,13 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
+import { OwneableModel } from '../../../owneable/models/owneable.model'
 
 export type ApiKeyDocument = HydratedDocument<ApiKey>
 
 @Schema()
-export class ApiKey {
-  @Prop({ type: Types.ObjectId, ref: 'User' })
-  user: Types.ObjectId
-
+export class ApiKey extends OwneableModel {
   @Prop({ unique: true, index: true })
   key: string
 

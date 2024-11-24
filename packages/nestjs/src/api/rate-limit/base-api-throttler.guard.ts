@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { ThrottlerGuard, ThrottlerModuleOptions, ThrottlerRequest, ThrottlerStorage } from '@nestjs/throttler'
-import { ApiKeyService } from '../apikey/services/apikey.service'
+import { BaseUser } from '../../user'
+import { ApiKey } from '../apikey/models/apikey.model'
+import { BaseApiKeyService } from '../apikey/services/base-apikey.service'
 
 @Injectable()
-export class ApiThrottlerGuard extends ThrottlerGuard {
+export class BaseApiThrottlerGuard extends ThrottlerGuard {
   constructor(
     options: ThrottlerModuleOptions,
     storageService: ThrottlerStorage,
     reflector: Reflector,
-    protected apiKeyService: ApiKeyService,
+    protected apiKeyService: BaseApiKeyService<ApiKey, BaseUser>,
   ) {
     super(options, storageService, reflector)
   }

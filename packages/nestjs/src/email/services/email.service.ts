@@ -1,7 +1,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import Handlebars from 'handlebars'
-import { SaaslibOptions } from 'src/types'
+import { SaaslibOptions } from '../../types/saaslib-options'
 import { BaseUser } from '../../user'
 import { EmailConfigOptions, EmailTemplate } from '../types/email-config-options'
 

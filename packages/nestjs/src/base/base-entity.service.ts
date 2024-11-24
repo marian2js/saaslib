@@ -8,7 +8,7 @@ import {
   UpdateWithAggregationPipeline,
 } from 'mongoose'
 import sift from 'sift'
-import { getNestedValue } from 'src/utils/object.utils'
+import { getNestedValue } from '../utils/object.utils'
 import { OmitMethods } from '../utils/typescript.utils'
 
 export abstract class BaseEntityService<T> {
