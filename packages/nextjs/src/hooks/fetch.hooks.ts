@@ -7,7 +7,7 @@ type FetchHookOptionsWithoutSkip = { skip?: never; skipDefault?: never }
 
 type FetchHookOptions<T> = RequestInit & (FetchHookOptionsWithSkip<T> | FetchHookOptionsWithoutSkip)
 
-export function useFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
+export function useApiFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<FetchApiError | null>(null)
@@ -22,7 +22,10 @@ export function useFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
       return
     }
     setLoading(true)
-    fetch(fullUrl, options)
+    fetch(fullUrl, {
+      ...options,
+      credentials: 'include',
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data?.error) {

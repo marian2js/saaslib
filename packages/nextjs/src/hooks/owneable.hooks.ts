@@ -1,12 +1,12 @@
 import { useCallback } from 'react'
-import { useApiCallback, useFetch } from './fetch.hooks'
+import { useApiCallback, useApiFetch } from './fetch.hooks'
 
 export function useFetchOwnableItems<T>(entityKey: string) {
-  return useFetch<{ items: T[] }>(`/${entityKey}`, { credentials: 'include' })
+  return useApiFetch<{ items: T[] }>(`/${entityKey}`, { credentials: 'include' })
 }
 
 export function useFetchOwnableItem<T>(entityKey: string, itemId: string) {
-  return useFetch<{ item: T }>(`/${entityKey}/${itemId}`, { credentials: 'include' })
+  return useApiFetch<{ item: T }>(`/${entityKey}/${itemId}`, { credentials: 'include' })
 }
 
 export function useCreateOwneableItem<CreateDto, GetDto>(entityKey: string) {
