@@ -6,6 +6,6 @@ export type SubscriptionModelOptions = Record<
     }>
     checkoutSuccessUrl: string
     checkoutCancelUrl: string
-    portalReturnUrl: string
+    billingReturnUrl: string
   }
 >

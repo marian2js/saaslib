@@ -58,6 +58,18 @@ export class BaseSubscriptionService<U extends BaseUser> {
     return this.stripe.subscriptions.retrieve(subscriptionId)
   }
 
+  async getBillingUrl(user: U, type: string): Promise<string> {
+    const customer = await this.stripe.customers.retrieve(user.stripeCustomerId)
+    if (!customer) {
+      throw new Error(`Customer ${user.stripeCustomerId} not found`)
+    }
+    const billingSession = await this.stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: this.options.subscriptions[type].billingReturnUrl,
+    })
+    return billingSession.url
+  }
+
   getSubscriptionType(productId: string): string | undefined {
     return Object.keys(this.options.subscriptions).find((type) =>
       this.options.subscriptions[type].products.some((product) => product.id === productId),
@@ -79,7 +91,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
       enabled_events: [
         'checkout.session.completed',
         // 'customer.subscription.created',
-        // 'customer.subscription.updated',
+        'customer.subscription.updated',
         // 'customer.subscription.deleted',
         // 'customer.subscription.trial_will_end',
       ],

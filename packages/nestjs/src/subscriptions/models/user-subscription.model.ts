@@ -13,4 +13,10 @@ export class UserSubscription {
 
   @Prop()
   nextProduct?: string
+
+  @Prop()
+  cancelled?: boolean
+
+  @Prop()
+  cancelledAt?: Date
 }
