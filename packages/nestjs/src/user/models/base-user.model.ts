@@ -1,5 +1,6 @@
-import { Prop, Schema } from '@nestjs/mongoose'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument, Types } from 'mongoose'
+import { UserSubscription } from '../../subscriptions/models/user-subscription.model'
 
 export type BaseUserDocument = HydratedDocument<BaseUser>
 
@@ -55,5 +56,15 @@ export class BaseUser {
   firstPasswordResetAttempt?: Date
 
   @Prop({})
-  blocked: boolean
+  blocked?: boolean
+
+  @Prop({})
+  stripeCustomerId?: string
+
+  @Prop({
+    type: Map,
+    of: SchemaFactory.createForClass(UserSubscription),
+    default: new Map(),
+  })
+  subscriptions: Map<string, UserSubscription>
 }
