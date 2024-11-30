@@ -3,6 +3,7 @@ export type SubscriptionModelOptions = Record<
   {
     products: Array<{
       id: string
+      prices: string[]
     }>
     checkoutSuccessUrl: string
     checkoutCancelUrl: string

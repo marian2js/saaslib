@@ -44,10 +44,11 @@ export class BaseSubscriptionController<U extends BaseUser> {
     if (!this.canSubscribe(user, type)) {
       throw new ForbiddenException('Cannot subscribe')
     }
-    this.logger.log(`Creating checkout session for user ${user._id} with price ${priceId}`)
+    if (!this.options.subscriptions[type].products.some((p) => p.prices.includes(priceId))) {
+      throw new NotFoundException('Price not found')
+    }
     const { checkoutSuccessUrl, checkoutCancelUrl } = this.options.subscriptions[type]
-    console.log('checkoutSuccessUrl:', checkoutSuccessUrl)
-    console.log('checkoutCancelUrl:', checkoutCancelUrl)
+    this.logger.log(`Creating checkout session for user ${user._id} with price ${priceId}`)
     const sessionId = await this.baseSubscriptionService.createCheckoutSession(
       user,
       type,

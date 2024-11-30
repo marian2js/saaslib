@@ -29,7 +29,6 @@ export class BaseSubscriptionService<U extends BaseUser> {
       throw new Error('Price not found')
     }
     const userSubscription = user.subscriptions.get(type)
-    console.log('userSubscription:', userSubscription)
     if (stripePrice.product === userSubscription?.product) {
       throw new BadRequestError('You already have this plan')
     }
