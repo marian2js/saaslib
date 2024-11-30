@@ -19,6 +19,22 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
       name: user.name,
       email: user.email,
       avatar: user.avatar,
+      subscriptions: this.getSubscriptionsApiObject(user),
     }
+  }
+
+  getSubscriptionsApiObject(user: U): Record<string, unknown> {
+    if (!user.subscriptions || user.subscriptions.size === 0) {
+      return undefined
+    }
+    return Array.from(user.subscriptions.entries()).reduce((acc, [key, value]) => {
+      acc[key] = {
+        product: value.product,
+        periodEnd: value.periodEnd,
+        nextProduct: value.nextProduct,
+        cancelled: value.cancelled,
+      }
+      return acc
+    }, {})
   }
 }
