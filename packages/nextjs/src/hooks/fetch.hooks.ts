@@ -9,12 +9,12 @@ type FetchHookOptions<T> = RequestInit & (FetchHookOptionsWithSkip<T> | FetchHoo
 
 export function useApiFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
   const [data, setData] = useState<T | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<FetchApiError | null>(null)
 
   let fullUrl = url.startsWith('/') ? process.env.NEXT_PUBLIC_API_ENDPOINT + url : url
 
-  useEffect(() => {
+  const doFetch = useCallback(async () => {
     if (options.skip) {
       if (options.skipDefault) {
         setData(options.skipDefault)
@@ -22,23 +22,28 @@ export function useApiFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
       return
     }
     setLoading(true)
-    fetch(fullUrl, {
-      ...options,
-      credentials: 'include',
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.error) {
-          setError(new FetchApiError(data))
-        } else {
-          setData(data)
-        }
+    try {
+      const res = await fetch(fullUrl, {
+        ...options,
+        credentials: 'include',
       })
-      .catch((err) => setError(err))
-      .finally(() => setLoading(false))
+      const data = await res.json()
+      if (data?.error) {
+        setError(new FetchApiError(data))
+      } else {
+        setData(data)
+      }
+      setLoading(false)
+    } catch (e) {
+      setError(e as FetchApiError)
+    }
   }, [fullUrl, options.skip])
 
-  return { data, loading, error }
+  useEffect(() => {
+    doFetch()
+  }, [doFetch])
+
+  return { data, loading, error, refetch: doFetch }
 }
 
 export function useApiCallback<T>() {

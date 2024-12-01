@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { UpdateQuery } from 'mongoose'
 import { BadRequestError } from 'passport-headerapikey'
 import { SaaslibOptions } from 'src/types'
 import { BaseUser } from 'src/user'
@@ -42,11 +43,104 @@ export class BaseSubscriptionService<U extends BaseUser> {
       ],
       mode: 'subscription',
       client_reference_id: user._id.toString(),
-      customer: user.stripeCustomerId,
+      ...(user.stripeCustomerId ? { customer: user.stripeCustomerId } : { customer_email: user.email }),
       success_url: successUrl,
       cancel_url: cancelUrl,
     })
     return session.id
+  }
+
+  async changeSubscription(user: U, type: string, priceId: string): Promise<UpdateQuery<UserSubscription>> {
+    const stripePrice = await this.stripe.prices.retrieve(priceId)
+    if (!stripePrice) {
+      throw new Error('Price not found')
+    }
+    const userSubscription = user.subscriptions.get(type)
+    if (stripePrice.product === userSubscription.product) {
+      throw new BadRequestError('You already have this plan')
+    }
+    const currentSubscription = await this.stripe.subscriptions.retrieve(userSubscription.stripeSubscriptionId)
+    if (!currentSubscription) {
+      throw new Error(`Subscription ${userSubscription.stripeSubscriptionId} not found`)
+    }
+
+    const isUpgrade =
+      this.options.subscriptions[type].products.findIndex((product) => product.id === stripePrice.product) >
+      this.options.subscriptions[type].products.findIndex((product) => product.id === userSubscription.product)
+
+    const updatedSubscription = await this.stripe.subscriptions.update(userSubscription.stripeSubscriptionId, {
+      items: [
+        {
+          id: currentSubscription.items.data[0].id,
+          price: priceId,
+        },
+      ],
+      proration_behavior: isUpgrade ? 'always_invoice' : 'none',
+      billing_cycle_anchor: isUpgrade ? 'now' : 'unchanged',
+      payment_behavior: 'pending_if_incomplete',
+    })
+    const latestInvoice = await this.stripe.invoices.retrieve(updatedSubscription.latest_invoice.toString())
+
+    if (!latestInvoice.payment_intent && latestInvoice.amount_due > 0) {
+      await this.stripe.paymentIntents.create({
+        amount: latestInvoice.amount_due,
+        currency: latestInvoice.currency,
+        customer: user.stripeCustomerId,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      })
+    }
+
+    const commonSet = {
+      [`subscriptions.${type}.stripeSubscriptionId`]: updatedSubscription.id,
+      [`subscriptions.${type}.periodEnd`]: new Date(updatedSubscription.current_period_end * 1000),
+    }
+    const commonUnset = {
+      ...(userSubscription.cancelled ? { [`subscriptions.${type}.cancelled`]: '' } : {}),
+      ...(userSubscription.cancelledAt ? { [`subscriptions.${type}.cancelledAt`]: '' } : {}),
+    }
+
+    if (isUpgrade) {
+      return {
+        $set: {
+          ...commonSet,
+          [`subscriptions.${type}.product`]: stripePrice.product,
+          [`subscriptions.${type}.periodEnd`]: new Date(updatedSubscription.current_period_end * 1000),
+        },
+        $unset: {
+          ...commonUnset,
+          ...(userSubscription.nextProduct ? { [`subscriptions.${type}.nextProduct`]: '' } : {}),
+        },
+      }
+    }
+
+    return {
+      $set: {
+        ...commonSet,
+        [`subscriptions.${type}.nextProduct`]: stripePrice.product,
+      },
+      $unset: commonUnset,
+    }
+  }
+
+  async resumeSubscription(userSubscription: UserSubscription): Promise<void> {
+    const subscription = await this.stripe.subscriptions.retrieve(userSubscription.stripeSubscriptionId)
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found')
+    }
+    if (subscription.cancel_at_period_end) {
+      await this.stripe.subscriptions.update(userSubscription.stripeSubscriptionId, {
+        cancel_at_period_end: false,
+      })
+    }
+  }
+
+  async cancelSubscription(userSubscription: UserSubscription): Promise<void> {
+    // Cancel subscription at the end of the billing cycle
+    await this.stripe.subscriptions.update(userSubscription.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    })
   }
 
   async getWebhookEvent(payload: any, signature: string): Promise<Stripe.Event | null> {

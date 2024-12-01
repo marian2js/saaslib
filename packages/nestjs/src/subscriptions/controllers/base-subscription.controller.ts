@@ -47,6 +47,22 @@ export class BaseSubscriptionController<U extends BaseUser> {
     if (!this.options.subscriptions[type].products.some((p) => p.prices.includes(priceId))) {
       throw new NotFoundException('Price not found')
     }
+    const userSubscription = user.subscriptions.get(type)
+    if (userSubscription?.stripeSubscriptionId) {
+      if (userSubscription.product === priceId) {
+        throw new BadRequestException('You already have this plan')
+      }
+      await this.baseSubscriptionService.changeSubscription(user, type, priceId)
+      await this.baseUserService.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            [`subscriptions.${type}.nextProduct`]: priceId,
+          } as UpdateQuery<U>,
+        },
+      )
+      return { ok: true }
+    }
     const { checkoutSuccessUrl, checkoutCancelUrl } = this.options.subscriptions[type]
     this.logger.log(`Creating checkout session for user ${user._id} with price ${priceId}`)
     const sessionId = await this.baseSubscriptionService.createCheckoutSession(
@@ -59,6 +75,79 @@ export class BaseSubscriptionController<U extends BaseUser> {
     return {
       sessionId,
     }
+  }
+
+  @UseGuards(UserGuard)
+  @Post('resume-subscription')
+  async resumeSubscription(@Req() req: Request, @Query('subscriptionId') subscriptionId: string) {
+    const userId = (req.user as { id: string }).id
+    const user = await this.baseUserService.findOne({ _id: userId })
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    const { type, userSubscription } = this.baseSubscriptionService.getUserSubscription(user, subscriptionId)
+    this.logger.log(`Resuming subscription ${type} for user ${user._id}`)
+    await this.baseSubscriptionService.resumeSubscription(userSubscription)
+    await this.baseUserService.updateOne(
+      { _id: user._id },
+      {
+        $unset: {
+          [`subscriptions.${type}.nextProduct`]: 1,
+        } as UpdateQuery<U>,
+      },
+    )
+    return { ok: true }
+  }
+
+  @UseGuards(UserGuard)
+  @Post('update-subscription')
+  async changeSubscription(
+    @Req() req: Request,
+    @Query('subscriptionId') subscriptionId: string,
+    @Query('priceId') priceId: string,
+  ) {
+    const userId = (req.user as { id: string }).id
+    const user = await this.baseUserService.findOne({ _id: userId })
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    const { type } = this.baseSubscriptionService.getUserSubscription(user, subscriptionId)
+    this.logger.log(`Changing subscription ${type} for user ${user._id}`)
+    const newProduct = await this.baseSubscriptionService.changeSubscription(user, type, priceId)
+    await this.baseUserService.updateOne(
+      { _id: user._id, 'subscriptions.type': type },
+      {
+        $set: {
+          [`subscriptions.${type}.product`]: newProduct,
+        } as UpdateQuery<U>,
+        $unset: {
+          [`subscriptions.${type}.nextProduct`]: 1,
+        } as UpdateQuery<U>,
+      },
+    )
+    return { ok: true }
+  }
+
+  @UseGuards(UserGuard)
+  @Post('cancel-subscription')
+  async cancelSubscription(@Req() req: Request, @Query('subscriptionId') subscriptionId: string) {
+    const userId = (req.user as { id: string }).id
+    const user = await this.baseUserService.findOne({ _id: userId })
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    const { type, userSubscription } = this.baseSubscriptionService.getUserSubscription(user, subscriptionId)
+    this.logger.log(`Cancelling subscription ${type} for user ${user._id}`)
+    await this.baseSubscriptionService.cancelSubscription(userSubscription)
+    await this.baseUserService.updateOne(
+      { _id: user._id },
+      {
+        $unset: {
+          [`subscriptions.${type}`]: 1,
+        } as UpdateQuery<U>,
+      },
+    )
+    return { ok: true }
   }
 
   @UseGuards(UserGuard)

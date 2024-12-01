@@ -8,7 +8,9 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   : null
 
 export function useCreateCheckoutSession() {
-  const { callback, loading, error, success } = useApiCallback<{ sessionId: string }>()
+  const { callback, loading, error, success } = useApiCallback<
+    { sessionId: string } | { ok: boolean } | { statusCode: number; message?: string }
+  >()
 
   const createCheckoutSession = useCallback(
     async (type: string, priceId: string) => {
@@ -16,7 +18,7 @@ export function useCreateCheckoutSession() {
         method: 'POST',
         body: JSON.stringify({ type, priceId }),
       })
-      return result?.sessionId
+      return result
     },
     [callback],
   )
@@ -31,29 +33,36 @@ export const useStripeSubscription = () => {
   const router = useRouter()
 
   const subscribe = useCallback(
-    async (type: string, priceId: string) => {
+    async (type: string, priceId: string): Promise<{ ok: boolean; message?: string }> => {
       setLoading(true)
       setError(null)
 
       try {
         const stripe = await stripePromise
         if (!stripe) {
-          return
+          return { ok: false }
         }
-        const sessionId = await createCheckoutSession(type, priceId)
-        if (!sessionId) {
-          return
+        const result = await createCheckoutSession(type, priceId)
+        if (!result) {
+          return { ok: false }
         }
 
-        const { error } = await stripe.redirectToCheckout({ sessionId })
+        if ('sessionId' in result) {
+          const { error } = await stripe.redirectToCheckout({ sessionId: result.sessionId })
 
-        if (error) {
-          throw new Error(error.message)
+          if (error) {
+            throw new Error(error.message)
+          }
+          return { ok: true }
+        } else if ('ok' in result) {
+          setLoading(false)
+          return result
+        } else {
+          throw new Error(result?.message ?? 'Invalid response')
         }
       } catch (err) {
         setError(err as Error)
-      } finally {
-        setLoading(false)
+        return { ok: false, message: (err as Error).message }
       }
     },
     [createCheckoutSession, router],
