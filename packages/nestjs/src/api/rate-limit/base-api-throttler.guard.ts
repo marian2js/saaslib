@@ -22,15 +22,19 @@ export class BaseApiThrottlerGuard extends ThrottlerGuard {
     const apiKey = await this.apiKeyService.findOne({ key: apiKeyString })
 
     if (apiKey) {
-      if (apiKey.unlimited) {
+      const throttling = await this.apiKeyService.getThrottlingData(apiKey)
+      if (throttling.unlimited) {
         return true
       }
-      if (typeof apiKey.limit === 'number') {
-        requestProps.limit = apiKey.limit
+      if (typeof throttling.limit === 'number') {
+        requestProps.limit = throttling.limit
+        requestProps.throttler.limit = throttling.limit
       }
-      if (typeof apiKey.ttl === 'number') {
-        requestProps.ttl = apiKey.ttl
+      if (typeof throttling.ttl === 'number') {
+        requestProps.ttl = throttling.ttl
+        requestProps.throttler.ttl = throttling.ttl
       }
+      requestProps.throttler.name = apiKey.owner.toString()
     } else if (apiKeyString) {
       return false
     }

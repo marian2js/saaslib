@@ -12,4 +12,25 @@ export abstract class BaseApiKeyService<E extends ApiKey, U extends BaseUser> ex
   constructor(@InjectModel(ApiKey.name) apiKeyModel: Model<E>) {
     super(apiKeyModel)
   }
+
+  getApiObject(entity: E, _owner: U) {
+    return {
+      id: entity._id,
+      key: entity.key,
+    }
+  }
+
+  getThrottlingData(apiKey: E): Partial<E> | Promise<Partial<E>> {
+    if (apiKey.unlimited) {
+      return { unlimited: true } as Partial<E>
+    }
+    const props: Partial<E> = {}
+    if (typeof apiKey.limit === 'number') {
+      props.limit = apiKey.limit
+    }
+    if (typeof apiKey.ttl === 'number') {
+      props.ttl = apiKey.ttl
+    }
+    return props
+  }
 }
