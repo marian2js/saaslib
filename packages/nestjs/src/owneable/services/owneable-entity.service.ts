@@ -20,8 +20,16 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
     return this.findMany({ ...(filter ?? {}), owner: ownerId }, options)
   }
 
+  maxEntities(_owner: U) {
+    return Infinity
+  }
+
   canView(entity: T, owner: U | null) {
     return owner && entity.owner.equals(owner._id)
+  }
+
+  canCreate(_entity: T, _owner: U) {
+    return true
   }
 
   canEdit(entity: T, owner: U) {

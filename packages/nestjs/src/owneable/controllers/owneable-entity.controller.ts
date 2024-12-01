@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Delete,
+  ForbiddenException,
   Get,
   Injectable,
   NotFoundException,
@@ -16,7 +17,8 @@ import { validate } from 'class-validator'
 import { Request } from 'express'
 import { Types } from 'mongoose'
 import { isPromise } from 'util/types'
-import { BaseUser, BaseUserService, UserGuard, OptionalUserGuard } from '../../user'
+import { LimitExceededException } from '../../exceptions/limit-exceeded.exception'
+import { BaseUser, BaseUserService, OptionalUserGuard, UserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
 import { OwneableEntityOptions } from '../types/owneable.types'
@@ -78,6 +80,19 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
 
     const userId = (req.user as { id: string }).id
     const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+    if (!this.owneableEntityService.canCreate(entity, user)) {
+      throw new ForbiddenException()
+    }
+    const maxEntities = this.owneableEntityService.maxEntities(user)
+    if (maxEntities === 0) {
+      throw new LimitExceededException()
+    } else if (maxEntities !== Infinity) {
+      const count = await this.owneableEntityService.count({ owner: user._id })
+      if (count >= maxEntities) {
+        throw new LimitExceededException()
+      }
+    }
+
     const entityToCreate = await this.beforeCreate({ ...entity, owner: user._id })
     const created = await this.owneableEntityService.create(entityToCreate)
     await this.afterCreate(created)
