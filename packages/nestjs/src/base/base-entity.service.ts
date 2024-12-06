@@ -13,7 +13,7 @@ import { OmitMethods } from '../utils/typescript.utils'
 
 export abstract class BaseEntityService<T> {
   protected localCacheSeconds: number | null = null
-  protected localCache: Map<string, { doc: T & Document; cachedAt: Date }> = new Map()
+  protected localCache: Map<string, { doc: T & Document; docObj: T; cachedAt: Date }> = new Map()
   protected localCacheAllAt: Date | null = null
   protected localMaxCacheSize: number | null = null
 
@@ -35,8 +35,10 @@ export abstract class BaseEntityService<T> {
 
   async findOne(filter: FilterQuery<T>): Promise<(T & Document) | null> {
     if (this.isCacheEnabled()) {
-      const result = this.findCachedDocument(filter)
-      if (result) return result
+      const result = this.findCachedDocument(filter, true)
+      if (result) {
+        return result
+      }
     }
     const doc = await this.model.findOne(filter).exec()
     if (doc) {
@@ -145,7 +147,7 @@ export abstract class BaseEntityService<T> {
   async deleteOne(filter: FilterQuery<T>): Promise<{ acknowledged: boolean; deletedCount: number }> {
     const result = await this.model.deleteOne(filter).exec()
     if (result.deletedCount > 0) {
-      const docToRemove = this.findCachedDocument(filter)
+      const docToRemove = this.findCachedDocument(filter, false)
       if (docToRemove) {
         this.removeFromCache(docToRemove._id.toString())
       }
@@ -192,7 +194,9 @@ export abstract class BaseEntityService<T> {
 
   private addToCache(doc: T & Document): void {
     if (this.isCacheEnabled()) {
-      this.localCache.set(doc._id.toString(), { doc, cachedAt: new Date() })
+      // Pre-convert document to an object for faster filtering
+      const docObj = doc.toObject() as T
+      this.localCache.set(doc._id.toString(), { doc, docObj, cachedAt: new Date() })
       this.enforceCacheLimit()
     }
   }
@@ -225,23 +229,29 @@ export abstract class BaseEntityService<T> {
   }
 
   /**
-   * Finds a single cached document that matches the filter.
-   * Uses toObject() to allow sift to work with Mongoose documents while preserving the original document in the result.
+   * Finds a single cached document that matches the filter
    */
-  private findCachedDocument(filter: FilterQuery<T>): (T & Document) | null {
-    const docs = this.getCachedDocuments()
-    const objArray = docs.map((doc) => doc.toObject())
-    return docs.find((doc, index) => sift(filter)(objArray[index])) || null
+  private findCachedDocument(filter: FilterQuery<T>, checkExpiration: boolean): (T & Document) | null {
+    let entries = Array.from(this.localCache.values())
+
+    if (checkExpiration) {
+      const now = new Date().getTime()
+      entries = entries.filter(({ cachedAt }) => now - cachedAt.getTime() < this.localCacheSeconds! * 1000)
+    }
+
+    const siftFilter = sift(filter)
+    const foundEntry = entries.find(({ docObj }) => siftFilter(docObj))
+    return foundEntry ? foundEntry.doc : null
   }
 
   /**
-   * Returns all cached documents that match the filter.
-   * Uses toObject() to allow sift to work with Mongoose documents while preserving the original documents in the result.
+   * Returns all cached documents that match the filter
+   * Assumes full cache is valid
    */
   private filterCachedDocuments(filter: FilterQuery<T>): (T & Document)[] {
-    const docs = this.getCachedDocuments()
-    const objArray = docs.map((doc) => doc.toObject())
-    return docs.filter((_, index) => sift(filter)(objArray[index]))
+    const entries = Array.from(this.localCache.values())
+    const siftFilter = sift(filter)
+    return entries.filter(({ docObj }) => siftFilter(docObj)).map(({ doc }) => doc)
   }
 
   private applySortToCache(docs: (T & Document)[], sort: Record<string, 1 | -1>): (T & Document)[] {
