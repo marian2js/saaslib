@@ -180,7 +180,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
 
   async createStripeWebhook() {
     const webhookEndpoint = await this.stripe.webhookEndpoints.create({
-      url: `https://bullaware.com/subscriptions/stripe-webhook`,
+      url: `${process.env.BACKEND_ENDPOINT}/subscriptions/stripe-webhook`,
       enabled_events: [
         'checkout.session.completed',
         // 'customer.subscription.created',
