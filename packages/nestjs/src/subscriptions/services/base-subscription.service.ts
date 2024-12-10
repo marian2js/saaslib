@@ -27,12 +27,16 @@ export class BaseSubscriptionService<U extends BaseUser> {
   ): Promise<string> {
     const stripePrice = await this.stripe.prices.retrieve(priceId)
     if (!stripePrice) {
-      throw new Error('Price not found')
+      throw new NotFoundException('Price not found')
     }
+
     const userSubscription = user.subscriptions.get(type)
     if (stripePrice.product === userSubscription?.product) {
       throw new BadRequestError('You already have this plan')
     }
+
+    const options = this.options.subscriptions[type].products.find((product) => product.id === stripePrice.product)
+
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -46,14 +50,16 @@ export class BaseSubscriptionService<U extends BaseUser> {
       ...(user.stripeCustomerId ? { customer: user.stripeCustomerId } : { customer_email: user.email }),
       success_url: successUrl,
       cancel_url: cancelUrl,
+      ...(options.subscriptionData ? { subscription_data: options.subscriptionData } : {}),
     })
+
     return session.id
   }
 
   async changeSubscription(user: U, type: string, priceId: string): Promise<UpdateQuery<UserSubscription>> {
     const stripePrice = await this.stripe.prices.retrieve(priceId)
     if (!stripePrice) {
-      throw new Error('Price not found')
+      throw new NotFoundException('Price not found')
     }
     const userSubscription = user.subscriptions.get(type)
     if (stripePrice.product === userSubscription.product) {
