@@ -51,6 +51,9 @@ export class BaseApiThrottlerGuard extends ThrottlerGuard {
     // Check authorization header first
     const authHeader = req.headers['authorization']
     if (authHeader) {
+      if (authHeader.startsWith('Bearer ')) {
+        return authHeader.split(' ')[1]
+      }
       return authHeader
     }
     const apiKeyHeader = req.headers['x-api-key']
