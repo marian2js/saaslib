@@ -18,8 +18,8 @@ export function useApiFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
     if (options.skip) {
       if (options.skipDefault) {
         setData(options.skipDefault)
-        setLoading(false)
       }
+      setLoading(false)
       return
     }
     setLoading(true)
