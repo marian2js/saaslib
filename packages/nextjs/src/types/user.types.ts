@@ -4,7 +4,7 @@ export type BaseLoggedInUser = {
   avatar?: string
 }
 
-type UserSubscription = {
+export type UserSubscription = {
   product: string
   periodEnd: string
   nextProduct?: string
