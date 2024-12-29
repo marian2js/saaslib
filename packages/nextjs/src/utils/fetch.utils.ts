@@ -11,6 +11,10 @@ export type FetchApiOptions = RequestInit & {
   backoffMultiplier?: number
 }
 
+export type FetchWithAuthOptions = FetchApiOptions & {
+  throwIfNoToken?: boolean
+}
+
 export async function fetchWithRetry(url: string, options: FetchApiOptions): Promise<Response> {
   let lastError: Error | null = null
   const maxRetries = options.maxRetries ?? 0
@@ -73,9 +77,12 @@ export async function fetchApi<T>(path: string, options?: FetchApiOptions): Prom
   return data
 }
 
-export async function fetchWithAuth<T>(path: string, options?: FetchApiOptions): Promise<T> {
+export async function fetchWithAuth<T>(path: string, options?: FetchWithAuthOptions): Promise<T> {
   const tokenCookie = cookies().get('jwt')
   if (!tokenCookie) {
+    if (options?.throwIfNoToken) {
+      throw new Error('No token found')
+    }
     return fetchApi<T>(path, options)
   }
   const token = JSON.parse(tokenCookie.value).accessToken

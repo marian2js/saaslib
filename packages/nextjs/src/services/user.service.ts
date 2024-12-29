@@ -1,11 +1,14 @@
 'use server'
 
 import { BaseUser } from '../types'
-import { fetchWithAuth } from '../utils/fetch.utils'
+import { fetchWithAuth, FetchWithAuthOptions } from '../utils/fetch.utils'
 
-export async function fetchMe<U extends BaseUser | null>() {
+export async function fetchMe<U extends BaseUser | null>(options?: FetchWithAuthOptions) {
   try {
-    const data = await fetchWithAuth<{ user: U }>(`/users/me`)
+    const data = await fetchWithAuth<{ user: U }>(`/users/me`, {
+      throwIfNoToken: true,
+      ...options,
+    })
     return data?.user ?? null
   } catch {
     return null
