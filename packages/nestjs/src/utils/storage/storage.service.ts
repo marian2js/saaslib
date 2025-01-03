@@ -3,12 +3,18 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, Logger } from '@nestjs/common'
 import { Readable } from 'stream'
+
+interface ListItemsResponse {
+  items: string[]
+  continuationToken?: string
+}
 
 @Injectable()
 export class StorageService {
@@ -166,6 +172,56 @@ export class StorageService {
       this.logger.log(`File deleted from ${bucketName}/${key}`)
     } catch (error) {
       this.logger.error(`Failed to delete file: ${error.message}`)
+      throw error
+    }
+  }
+
+  async listItems(
+    bucketName: string,
+    options?: {
+      prefix?: string
+      continuationToken?: string
+      maxKeys?: number
+    },
+  ): Promise<ListItemsResponse> {
+    try {
+      const command = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: options?.prefix,
+        ContinuationToken: options?.continuationToken,
+        MaxKeys: options?.maxKeys,
+      })
+
+      const response = await this.s3Client.send(command)
+      const items = response.Contents?.map((item) => item.Key).filter((key): key is string => !!key) || []
+
+      this.logger.log(
+        `Listed ${items.length} items from bucket ${bucketName}${options?.prefix ? ` with prefix ${options.prefix}` : ''}`,
+      )
+      return {
+        items,
+        continuationToken: response.NextContinuationToken,
+      }
+    } catch (error) {
+      this.logger.error(`Failed to list items from bucket: ${error.message}`)
+      throw error
+    }
+  }
+
+  async listAllItems(bucketName: string, prefix?: string): Promise<string[]> {
+    const items: string[] = []
+    let continuationToken: string | undefined
+
+    try {
+      do {
+        const response = await this.listItems(bucketName, { prefix, continuationToken })
+        items.push(...response.items)
+        continuationToken = response.continuationToken
+      } while (continuationToken)
+
+      return items
+    } catch (error) {
+      this.logger.error(`Failed to list all items from bucket: ${error.message}`)
       throw error
     }
   }
