@@ -1,11 +1,23 @@
-import { loadStripe } from '@stripe/stripe-js'
+import { Stripe } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { useApiCallback } from './fetch.hooks'
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+// Remove the static import of loadStripe
+let cachedStripe: Promise<Stripe | null> | null = null
+
+const getStripe = async () => {
+  if (!cachedStripe) {
+    if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+      // Dynamically import loadStripe only when needed
+      const { loadStripe } = await import('@stripe/stripe-js')
+      cachedStripe = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+    } else {
+      cachedStripe = Promise.resolve(null)
+    }
+  }
+  return cachedStripe
+}
 
 export function useCreateCheckoutSession() {
   const { callback, loading, error, success } = useApiCallback<
@@ -38,13 +50,14 @@ export const useStripeSubscription = () => {
       setError(null)
 
       try {
-        const stripe = await stripePromise
+        const stripe = await getStripe()
         if (!stripe) {
-          return { ok: false }
+          return { ok: false, message: 'Stripe initialization failed' }
         }
+
         const result = await createCheckoutSession(type, priceId)
         if (!result) {
-          return { ok: false }
+          return { ok: false, message: 'Failed to create checkout session' }
         }
 
         if ('sessionId' in result) {
