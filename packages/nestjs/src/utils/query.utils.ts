@@ -1,5 +1,8 @@
+import { isObject, mergeDeep } from './object.utils'
+
 interface BuildUpdateQueryOptions {
   ignoreNullValues?: boolean
+  mergeDeepObjects?: boolean
 }
 
 /**
@@ -28,12 +31,15 @@ export function buildUpdateQuery<T>(
 
     if (newValue === undefined && oldValue !== undefined) {
       result.$unset[keyTyped] = ''
-    } else if (
-      newValue !== undefined &&
-      (!options.ignoreNullValues || newValue !== null) &&
-      JSON.stringify(oldValue) !== JSON.stringify(newValue)
-    ) {
-      result.$set[keyTyped] = newValue
+    } else if (newValue !== undefined && (!options.ignoreNullValues || newValue !== null)) {
+      if (options.mergeDeepObjects && isObject(newValue) && isObject(oldValue)) {
+        const mergedValue = mergeDeep(oldValue, newValue)
+        if (JSON.stringify(oldValue) !== JSON.stringify(mergedValue)) {
+          result.$set[keyTyped] = mergedValue
+        }
+      } else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        result.$set[keyTyped] = newValue
+      }
     }
   })
 
@@ -79,12 +85,15 @@ export function buildUpdateQueryWithMapping<T>(
 
       if (newValue === undefined && oldValue !== undefined) {
         result.$unset[key as keyof T] = ''
-      } else if (
-        newValue !== undefined &&
-        (!options.ignoreNullValues || newValue !== null) &&
-        JSON.stringify(oldValue) !== JSON.stringify(newValue)
-      ) {
-        result.$set[key as keyof T] = newValue
+      } else if (newValue !== undefined && (!options.ignoreNullValues || newValue !== null)) {
+        if (options.mergeDeepObjects && isObject(newValue) && isObject(oldValue)) {
+          const mergedValue = mergeDeep(oldValue, newValue as any)
+          if (JSON.stringify(oldValue) !== JSON.stringify(mergedValue)) {
+            result.$set[key as keyof T] = mergedValue
+          }
+        } else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          result.$set[key as keyof T] = newValue
+        }
       }
     }
   })

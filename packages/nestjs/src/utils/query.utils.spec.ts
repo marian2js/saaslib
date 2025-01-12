@@ -91,6 +91,78 @@ describe('buildUpdateQuery', () => {
       $set: { a: 10 },
     })
   })
+
+  it('should merge nested objects when mergeDeepObjects is true', () => {
+    const doc = {
+      settings: {
+        theme: 'dark',
+        notifications: true,
+        display: { color: 'blue', size: 'large' },
+      },
+    }
+    const updateData = {
+      settings: {
+        theme: 'light',
+        display: { size: 'small' },
+      },
+    }
+
+    const result = buildUpdateQuery(doc, updateData as any, { mergeDeepObjects: true })
+
+    expect(result).toEqual({
+      $set: {
+        settings: {
+          theme: 'light',
+          notifications: true,
+          display: { color: 'blue', size: 'small' },
+        },
+      },
+    })
+  })
+
+  it('should not merge objects when mergeDeepObjects is false', () => {
+    const doc = {
+      settings: {
+        theme: 'dark',
+        notifications: true,
+      },
+    }
+    const updateData = {
+      settings: {
+        theme: 'light',
+      },
+    }
+
+    const result = buildUpdateQuery(doc, updateData as any)
+
+    expect(result).toEqual({
+      $set: {
+        settings: {
+          theme: 'light',
+        },
+      },
+    })
+  })
+
+  it('should handle arrays as non-mergeable values when mergeDeepObjects is true', () => {
+    const doc = {
+      items: [1, 2, 3],
+      config: { items: [{ id: 1 }] },
+    }
+    const updateData = {
+      items: [4, 5],
+      config: { items: [{ id: 2 }] },
+    }
+
+    const result = buildUpdateQuery(doc, updateData, { mergeDeepObjects: true })
+
+    expect(result).toEqual({
+      $set: {
+        items: [4, 5],
+        config: { items: [{ id: 2 }] },
+      },
+    })
+  })
 })
 
 describe('buildUpdateQueryWithMapping', () => {
@@ -180,6 +252,34 @@ describe('buildUpdateQueryWithMapping', () => {
 
     expect(result).toEqual({
       $set: { a: 10 },
+    })
+  })
+
+  it('should merge nested objects with mapping when mergeDeepObjects is true', () => {
+    const doc = {
+      userConfig: {
+        theme: 'dark',
+        notifications: true,
+      },
+    }
+    const updateData = {
+      config: {
+        theme: 'light',
+      },
+    }
+    const mapping = {
+      userConfig: 'config',
+    }
+
+    const result = buildUpdateQueryWithMapping(doc, updateData, mapping, { mergeDeepObjects: true })
+
+    expect(result).toEqual({
+      $set: {
+        userConfig: {
+          theme: 'light',
+          notifications: true,
+        },
+      },
     })
   })
 })
