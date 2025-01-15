@@ -13,6 +13,9 @@ export interface EmailConfigOptions {
     welcome?: EmailTemplate<{ user: BaseUser; email: string; name: string }>
     verification?: EmailTemplate<{ user: BaseUser; code: string; link: string }>
     passwordReset?: EmailTemplate<{ user: BaseUser; code: string; link: string }>
+    newSubscription?: {
+      [key: string]: EmailTemplate<{ user: BaseUser; code: string; link: string }>
+    }
   }
   newsletters?: [
     {

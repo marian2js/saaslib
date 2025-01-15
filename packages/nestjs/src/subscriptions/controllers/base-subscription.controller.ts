@@ -16,6 +16,7 @@ import {
 import { Request, Response } from 'express'
 import { UpdateQuery } from 'mongoose'
 import Stripe from 'stripe'
+import { EmailService } from '../../email/services/email.service'
 import { SaaslibOptions } from '../../types'
 import { BaseUser, BaseUserService, UserGuard } from '../../user'
 import { isEmptyObj } from '../../utils'
@@ -26,6 +27,7 @@ export class BaseSubscriptionController<U extends BaseUser> {
   constructor(
     private baseSubscriptionService: BaseSubscriptionService<U>,
     private baseUserService: BaseUserService<U>,
+    protected emailService: EmailService,
     @Inject('SL_OPTIONS') protected options: SaaslibOptions,
   ) {}
 
@@ -239,6 +241,9 @@ export class BaseSubscriptionController<U extends BaseUser> {
           : {}),
       },
     )
+
+    // Send subscription email if template is configured
+    await this.emailService.sendNewSubscriptionEmail(user, type)
   }
 
   protected async onCustomerSubscriptionUpdated(event: Stripe.CustomerSubscriptionUpdatedEvent) {

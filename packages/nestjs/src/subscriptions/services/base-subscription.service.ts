@@ -2,8 +2,8 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { UpdateQuery } from 'mongoose'
 import { BadRequestError } from 'passport-headerapikey'
 import { SaaslibOptions } from 'src/types'
-import { BaseUser } from 'src/user'
 import Stripe from 'stripe'
+import { BaseUser } from '../../user'
 import { UserSubscription } from '../models/user-subscription.model'
 
 @Injectable()

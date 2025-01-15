@@ -1,25 +1,25 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { BaseEntityService } from 'src/base'
-import { SaaslibOptions } from 'src/types'
-import { BaseUser } from 'src/user'
-import { SecurityUtils } from 'src/utils'
+import { BaseEntityService } from '../../base'
+import { SaaslibOptions } from '../../types'
+import { BaseUser } from '../../user'
+import { SecurityUtils } from '../../utils'
 import { NewsletterSubscription } from '../model/newsletter-subscription.model'
 
 @Injectable()
-export class NewsletterSubscriptionService extends BaseEntityService<NewsletterSubscription> {
+export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubscription> extends BaseEntityService<T> {
   private validKeys: string[]
 
   constructor(
-    @InjectModel(NewsletterSubscription.name) private newsletterSubscriptionModel: Model<NewsletterSubscription>,
+    @InjectModel(NewsletterSubscription.name) protected newsletterSubscriptionModel: Model<T>,
     @Inject('SL_OPTIONS') options: SaaslibOptions,
   ) {
     super(newsletterSubscriptionModel)
     this.validKeys = options.email.newsletters.map((n) => n.key)
   }
 
-  async subscribe(user: BaseUser, key: string): Promise<NewsletterSubscription> {
+  async subscribe(user: BaseUser, key: string): Promise<T> {
     if (!this.validKeys.includes(key)) {
       throw new BadRequestException('Invalid newsletter key')
     }
@@ -30,7 +30,7 @@ export class NewsletterSubscriptionService extends BaseEntityService<NewsletterS
     )
   }
 
-  async subscribeWithToken(userId: string, key: string, token: string): Promise<NewsletterSubscription | null> {
+  async subscribeWithToken(userId: string, key: string, token: string): Promise<T | null> {
     if (!this.validKeys.includes(key)) {
       throw new BadRequestException('Invalid newsletter key')
     }
@@ -41,7 +41,7 @@ export class NewsletterSubscriptionService extends BaseEntityService<NewsletterS
     )
   }
 
-  async unsubscribe(user: BaseUser, key: string): Promise<NewsletterSubscription> {
+  async unsubscribe(user: BaseUser, key: string): Promise<T> {
     if (!this.validKeys.includes(key)) {
       throw new BadRequestException('Invalid newsletter key')
     }
@@ -52,7 +52,7 @@ export class NewsletterSubscriptionService extends BaseEntityService<NewsletterS
     )
   }
 
-  async unsubscribeWithToken(userId: string, key: string, token: string): Promise<NewsletterSubscription | null> {
+  async unsubscribeWithToken(userId: string, key: string, token: string): Promise<T | null> {
     if (!this.validKeys.includes(key)) {
       throw new BadRequestException('Invalid newsletter key')
     }

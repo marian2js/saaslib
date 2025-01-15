@@ -65,6 +65,22 @@ export class EmailService {
     )
   }
 
+  async sendNewSubscriptionEmail(user: BaseUser, type: string) {
+    const template = this.emailConfig.templates?.newSubscription?.[type]
+    if (!template) {
+      return
+    }
+    await this.sendTemplateEmail(
+      user.email,
+      template,
+      { user, code: '', link: '' },
+      {
+        subject: `Subscription Confirmation - ${type}`,
+        html: `<p>Thank you for subscribing to ${type}!</p>`,
+      },
+    )
+  }
+
   async sendTemplateEmail<T>(
     to: string,
     template: EmailTemplate<T>,
