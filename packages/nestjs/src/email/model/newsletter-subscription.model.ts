@@ -14,6 +14,12 @@ export class NewsletterSubscription {
 
   @Prop({ required: true })
   token: string
+
+  @Prop({ required: true, default: 0 })
+  emailsSent: number
+
+  @Prop({ type: Date })
+  lastEmailSentAt?: Date
 }
 
 export const NewsletterSubscriptionSchema = SchemaFactory.createForClass(NewsletterSubscription)

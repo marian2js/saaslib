@@ -3,9 +3,10 @@ import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { BaseEntityService } from '../../base'
 import { SaaslibOptions } from '../../types'
-import { BaseUser } from '../../user'
+import { BaseUser, BaseUserService } from '../../user'
 import { SecurityUtils } from '../../utils'
 import { NewsletterSubscription } from '../model/newsletter-subscription.model'
+import { EmailService } from './email.service'
 
 @Injectable()
 export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubscription> extends BaseEntityService<T> {
@@ -13,6 +14,8 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
 
   constructor(
     @InjectModel(NewsletterSubscription.name) protected newsletterSubscriptionModel: Model<T>,
+    protected emailService: EmailService,
+    protected userService: BaseUserService<BaseUser>,
     @Inject('SL_OPTIONS') options: SaaslibOptions,
   ) {
     super(newsletterSubscriptionModel)
@@ -59,6 +62,32 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
     return this.newsletterSubscriptionModel.findOneAndUpdate(
       { user: userId, key, token },
       { subscribed: false },
+      { new: true },
+    )
+  }
+
+  async sendEmail(subscriptionId: string, subject: string, body: string): Promise<T> {
+    const subscription = await this.newsletterSubscriptionModel.findById(subscriptionId)
+    if (!subscription) {
+      throw new BadRequestException('Subscription not found')
+    }
+    if (!subscription.subscribed) {
+      throw new BadRequestException('User is not subscribed')
+    }
+
+    const user = await this.userService.findById(subscription.user.toString())
+    if (!user) {
+      throw new BadRequestException('User not found')
+    }
+
+    await this.emailService.sendEmail([user.email], subject, body)
+
+    return this.newsletterSubscriptionModel.findByIdAndUpdate(
+      subscriptionId,
+      {
+        $inc: { emailsSent: 1 },
+        lastEmailSentAt: new Date(),
+      },
       { new: true },
     )
   }
