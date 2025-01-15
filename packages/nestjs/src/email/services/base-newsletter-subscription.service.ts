@@ -80,7 +80,8 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
       throw new BadRequestException('User not found')
     }
 
-    await this.emailService.sendEmail([user.email], subject, body)
+    const unsubscribeUrl = `${process.env.UNSUBSCRIBE_EMAIL_URL}?userId=${subscription.user}&key=${subscription.key}&token=${subscription.token}`
+    await this.emailService.sendEmail([user.email], subject, body, unsubscribeUrl)
 
     return this.newsletterSubscriptionModel.findByIdAndUpdate(
       subscriptionId,
@@ -90,5 +91,13 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
       },
       { new: true },
     )
+  }
+
+  async isSubscribed(user: BaseUser, key: string): Promise<boolean> {
+    if (!this.validKeys.includes(key)) {
+      throw new BadRequestException('Invalid newsletter key')
+    }
+    const subscription = await this.newsletterSubscriptionModel.findOne({ user: user._id, key })
+    return subscription?.subscribed ?? false
   }
 }

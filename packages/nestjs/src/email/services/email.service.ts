@@ -100,7 +100,7 @@ export class EmailService {
     await this.sendEmail([to], template?.subject(vars) ?? defaults.subject, htmlEmail)
   }
 
-  async sendEmail(to: string[], subject: string, body: string): Promise<void> {
+  async sendEmail(to: string[], subject: string, body: string, unsubscribeUrl?: string): Promise<void> {
     // If SES is not configured, log email to console instead
     if (!this.sesClient) {
       this.logger.warn('AWS SES not configured, email not sent.')
@@ -127,6 +127,17 @@ export class EmailService {
           Data: subject,
         },
       },
+    }
+
+    if (unsubscribeUrl) {
+      params['Headers'] = {
+        'List-Unsubscribe': {
+          Data: `<mailto:${this.emailConfig.from}?subject=unsubscribe>, <${unsubscribeUrl}>`,
+        },
+        'List-Unsubscribe-Post': {
+          Data: 'List-Unsubscribe=One-Click',
+        },
+      }
     }
 
     try {

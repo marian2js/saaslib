@@ -1,4 +1,4 @@
-import { Body, Controller, NotFoundException, Post, Req, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, NotFoundException, Post, Query, Req, UseGuards } from '@nestjs/common'
 import { Request } from 'express'
 import { BaseUser, BaseUserService, UserGuard } from '../../user'
 import { NewsletterSubscription } from '../model/newsletter-subscription.model'
@@ -43,5 +43,13 @@ export class BaseNewsletterController<T extends NewsletterSubscription> {
       throw new NotFoundException('Invalid subscription or token')
     }
     return { ok: true }
+  }
+
+  @UseGuards(UserGuard)
+  @Get('/subscription-status')
+  async isSubscribed(@Req() req: Request, @Query('key') key: string) {
+    const user = await this.baseUserService.requireUserOnRequest(req)
+    const isSubscribed = await this.baseNewsletterSubscriptionService.isSubscribed(user, key)
+    return { isSubscribed }
   }
 }
