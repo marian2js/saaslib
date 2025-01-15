@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
+import Handlebars from 'handlebars'
+import { Model, ObjectId, Types } from 'mongoose'
 import { BaseEntityService } from '../../base'
 import { SaaslibOptions } from '../../types'
 import { BaseUser, BaseUserService } from '../../user'
@@ -38,7 +39,7 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
       throw new BadRequestException('Invalid newsletter key')
     }
     return this.newsletterSubscriptionModel.findOneAndUpdate(
-      { user: userId, key, token },
+      { user: new Types.ObjectId(userId), key, token },
       { subscribed: true },
       { new: true },
     )
@@ -60,13 +61,13 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
       throw new BadRequestException('Invalid newsletter key')
     }
     return this.newsletterSubscriptionModel.findOneAndUpdate(
-      { user: userId, key, token },
+      { user: new Types.ObjectId(userId), key, token },
       { subscribed: false },
       { new: true },
     )
   }
 
-  async sendEmail(subscriptionId: string, subject: string, body: string): Promise<T> {
+  async sendEmail(subscriptionId: ObjectId, subject: string, body: string): Promise<T> {
     const subscription = await this.newsletterSubscriptionModel.findById(subscriptionId)
     if (!subscription) {
       throw new BadRequestException('Subscription not found')
@@ -91,6 +92,17 @@ export abstract class BaseNewsletterSubscriptionService<T extends NewsletterSubs
       },
       { new: true },
     )
+  }
+
+  async sendTemplateEmail(
+    subscriptionId: ObjectId,
+    subject: string,
+    templateHtml: string,
+    templateVars: any,
+  ): Promise<T> {
+    const template = Handlebars.compile(templateHtml)
+    const body = template(templateVars)
+    return this.sendEmail(subscriptionId, subject, body)
   }
 
   async isSubscribed(user: BaseUser, key: string): Promise<boolean> {

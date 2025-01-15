@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Types } from 'mongoose'
 
-@Schema({ _id: false })
+@Schema()
 export class NewsletterSubscription {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   user: Types.ObjectId
