@@ -38,3 +38,26 @@ export function useDeleteAvatar() {
 
   return { deleteAvatar, success, loading, error }
 }
+
+export function usePatchMe<T extends BaseUser = BaseUser>() {
+  const { callback, success, loading, error } = useApiCallback<{ user: T }>()
+
+  const patchMe = async (data: Partial<T>) => {
+    const res = await callback('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    if (res?.user) {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        const user = JSON.parse(userData) as BaseLoggedInUser
+        localStorage.setItem('user', JSON.stringify({ ...user, ...res.user }))
+      }
+    }
+  }
+
+  return { patchMe, success, loading, error }
+}
