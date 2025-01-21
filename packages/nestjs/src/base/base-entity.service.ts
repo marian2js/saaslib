@@ -136,6 +136,25 @@ export abstract class BaseEntityService<T> {
     return result
   }
 
+  async upsertOne(
+    filter: FilterQuery<T>,
+    update: UpdateQuery<T>,
+    options: MongooseUpdateQueryOptions<T> | null = null,
+  ): Promise<{ doc: T & Document; created: boolean }> {
+    const existingDoc = await this.findOne(filter)
+    if (existingDoc) {
+      await this.updateOne(filter, update, options)
+      const updatedDoc = await this.findOne(filter)
+      return { doc: updatedDoc, created: false }
+    }
+    const data = ('$set' in update ? update.$set : update) as Partial<OmitMethods<T>>
+    const createdDoc = await this.create({
+      ...filter,
+      ...data,
+    })
+    return { doc: createdDoc as T & Document, created: true }
+  }
+
   async deleteById(id: typeof Document.prototype._id): Promise<{ acknowledged: boolean; deletedCount: number }> {
     const result = await this.model.deleteOne({ _id: id }).exec()
     if (result.deletedCount > 0) {

@@ -21,6 +21,8 @@ class FakeModel {
 
 const FakeModelSchema = SchemaFactory.createForClass(FakeModel)
 
+FakeModelSchema.index({ key: 1 }, { unique: true, sparse: true })
+
 @Injectable()
 class FakeEntityService extends BaseEntityService<FakeModel> {
   constructor(@InjectModel(FakeModel.name) private fakeModel: Model<FakeModel>) {
@@ -206,6 +208,55 @@ describe('BaseEntityService', () => {
     it('should not delete any documents if there are no matches', async () => {
       const res = await service.deleteOne({ key: 'nonexistent' })
       expect(res.deletedCount).toEqual(0)
+    })
+  })
+
+  describe('upsertOne', () => {
+    it('should create a new document when no match is found', async () => {
+      const { doc, created } = await service.upsertOne(
+        { name: 'NonExistent' },
+        { $set: { name: 'NewDoc', category: 'Test' } },
+      )
+      expect(created).toBe(true)
+      expect(doc.name).toBe('NewDoc')
+      expect(doc.category).toBe('Test')
+
+      const foundDoc = await service.findOne({ name: 'NewDoc' })
+      expect(foundDoc).toBeDefined()
+      expect(foundDoc!.category).toBe('Test')
+    })
+
+    it('should update an existing document when a match is found', async () => {
+      const existingDoc = await service.create({ name: 'ExistingDoc', category: 'Old' })
+      const { doc, created } = await service.upsertOne({ _id: existingDoc._id }, { $set: { category: 'Updated' } })
+      expect(created).toBe(false)
+      expect(doc._id).toEqual(existingDoc._id)
+      expect(doc.name).toBe('ExistingDoc')
+      expect(doc.category).toBe('Updated')
+
+      const foundDoc = await service.findOne({ _id: existingDoc._id })
+      expect(foundDoc!.category).toBe('Updated')
+    })
+
+    it('should fail if update violates a unique constraint', async () => {
+      await service.create({ name: 'FirstDoc', key: 'unique1' })
+      await service.create({ name: 'SecondDoc', key: 'unique2' })
+
+      await expect(service.upsertOne({ name: 'FirstDoc' }, { $set: { key: 'unique2' } })).rejects.toThrow()
+    })
+
+    it('should handle direct update without $set operator', async () => {
+      const { doc, created } = await service.upsertOne(
+        { name: 'NonExistent' },
+        { name: 'DirectUpdate', category: 'Test' },
+      )
+      expect(created).toBe(true)
+      expect(doc.name).toBe('DirectUpdate')
+      expect(doc.category).toBe('Test')
+
+      const foundDoc = await service.findOne({ name: 'DirectUpdate' })
+      expect(foundDoc).toBeDefined()
+      expect(foundDoc!.category).toBe('Test')
     })
   })
 
