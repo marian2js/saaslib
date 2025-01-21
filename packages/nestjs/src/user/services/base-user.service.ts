@@ -75,4 +75,15 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
     }
     return user.subscriptions && user.subscriptions.has(subscriptionKey)
   }
+
+  async requireRoleOnRequest(req: Request, role: string): Promise<U> {
+    const user = await this.findUserOnRequest(req)
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    if (user.role !== role) {
+      throw new ForbiddenException('Forbidden')
+    }
+    return user
+  }
 }
