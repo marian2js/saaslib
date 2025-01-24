@@ -16,7 +16,9 @@ type RetryOptions = {
   maxRetryDelay?: number
 }
 
-type FetchHookOptions<T> = RequestInit & (FetchHookOptionsWithSkip<T> | FetchHookOptionsWithoutSkip) & RetryOptions
+export type FetchHookOptions<T> = RequestInit &
+  (FetchHookOptionsWithSkip<T> | FetchHookOptionsWithoutSkip) &
+  RetryOptions
 
 export function useApiFetch<T>(url: string, options: FetchHookOptions<T> = {}) {
   const [data, setData] = useState<T | null>(null)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BaseLoggedInUser, BaseUser } from '../types/user.types'
-import { useApiCallback, useApiFetch } from './fetch.hooks'
+import { FetchHookOptions, useApiCallback, useApiFetch } from './fetch.hooks'
 
 export function useLoggedInUser<T extends BaseLoggedInUser = BaseLoggedInUser>() {
   const [user, setUser] = useState<T | null>(null)
@@ -17,8 +17,8 @@ export function useLoggedInUser<T extends BaseLoggedInUser = BaseLoggedInUser>()
   return { user, loading }
 }
 
-export function useGetMe<T extends BaseUser = BaseUser>() {
-  return useApiFetch<{ user: T }>('/users/me', { credentials: 'include' })
+export function useGetMe<T extends BaseUser = BaseUser>(options?: FetchHookOptions<{ user: T }>) {
+  return useApiFetch<{ user: T }>('/users/me', { credentials: 'include', ...options })
 }
 
 export function useDeleteAvatar() {
