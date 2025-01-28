@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { BaseLoggedInUser, BaseUser } from '../types/user.types'
 import { FetchHookOptions, useApiCallback, useApiFetch } from './fetch.hooks'

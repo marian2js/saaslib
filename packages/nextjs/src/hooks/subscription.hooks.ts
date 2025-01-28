@@ -1,3 +1,5 @@
+'use client'
+
 import { Stripe } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
