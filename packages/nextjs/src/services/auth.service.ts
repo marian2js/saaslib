@@ -6,7 +6,7 @@ import { fetchApi, fetchWithAuth } from '../utils'
 import { isAccessTokenExpired } from '../utils/auth.utils'
 
 export async function isLoggedIn(): Promise<boolean> {
-  const tokenCookie = cookies().get('jwt')
+  const tokenCookie = (await cookies()).get('jwt')
   if (!tokenCookie) {
     return false
   }
@@ -25,7 +25,7 @@ export async function passwordSignUp(email: string, password: string) {
   if (!res.user || !res.token) {
     throw new Error((res as any).message ?? 'Invalid response')
   }
-  setAuthCookie(res.token)
+  await setAuthCookie(res.token)
   return res.user
 }
 
@@ -43,7 +43,7 @@ export async function passwordSignIn(email: string, password: string, rememberMe
   if (!res.user || !res.token) {
     throw new Error('Invalid response')
   }
-  setAuthCookie(res.token, rememberMe)
+  await setAuthCookie(res.token, rememberMe)
   return res.user
 }
 
@@ -61,7 +61,7 @@ export async function verifyOAuthCode(code: string) {
   if (!res.user || !res.token) {
     throw new Error('Invalid response')
   }
-  setAuthCookie(res.token)
+  await setAuthCookie(res.token)
   return res.user
 }
 
@@ -79,7 +79,8 @@ export async function signOutServer() {
   await fetchWithAuth('/auth/signout', {
     method: 'POST',
   })
-  cookies().set('jwt', '', {
+  const cookieData = await cookies()
+  cookieData.set('jwt', '', {
     httpOnly: true,
     path: '/',
     domain: getCookieDomain(),
@@ -101,9 +102,8 @@ export async function refreshAccessToken(userId: string, refreshToken: string): 
 }
 
 export async function setAuthCookie(token: { accessToken: string; refreshToken: string }, rememberMe: boolean = true) {
-  'use server'
-
-  cookies().set('jwt', JSON.stringify(token), {
+  const cookieData = await cookies()
+  cookieData.set('jwt', JSON.stringify(token), {
     httpOnly: true,
     path: '/',
     domain: getCookieDomain(),

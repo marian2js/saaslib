@@ -78,7 +78,8 @@ export async function fetchApi<T>(path: string, options?: FetchApiOptions): Prom
 }
 
 export async function fetchWithAuth<T>(path: string, options?: FetchWithAuthOptions): Promise<T> {
-  const tokenCookie = cookies().get('jwt')
+  const cookieData = await cookies()
+  const tokenCookie = cookieData.get('jwt')
   if (!tokenCookie) {
     if (options?.throwIfNoToken) {
       throw new Error('No token found')
