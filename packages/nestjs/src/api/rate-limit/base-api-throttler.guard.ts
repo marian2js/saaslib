@@ -48,17 +48,18 @@ export class BaseApiThrottlerGuard extends ThrottlerGuard {
   }
 
   protected extractApiKey(req: Record<string, any>): string | null {
-    // Check authorization header first
+    // x-api-key has max priority
+    const apiKeyHeader = req.headers['x-api-key']
+    if (apiKeyHeader) {
+      return apiKeyHeader
+    }
+
     const authHeader = req.headers['authorization']
     if (authHeader) {
       if (authHeader.startsWith('Bearer ')) {
         return authHeader.split(' ')[1]
       }
       return authHeader
-    }
-    const apiKeyHeader = req.headers['x-api-key']
-    if (apiKeyHeader) {
-      return apiKeyHeader
     }
 
     // Check query parameter
