@@ -60,7 +60,15 @@ export function useCompletePasswordResetActionState(code: string, initialState?:
   )
 }
 
-export function useOAuthRedirect(code: string | undefined, redirectTo: string = '/') {
+export function useOAuthRedirect({
+  code,
+  redirectTo = '/',
+  onSuccess,
+}: {
+  code: string | undefined
+  redirectTo?: string
+  onSuccess?: (user: BaseLoggedInUser) => void
+}) {
   const router = useRouter()
 
   useEffect(() => {
@@ -71,7 +79,11 @@ export function useOAuthRedirect(code: string | undefined, redirectTo: string = 
       }
       const user = await verifyOAuthCode(code)
       localStorage.setItem('user', JSON.stringify(user))
-      router.push(redirectTo)
+      if (onSuccess) {
+        onSuccess(user)
+      } else {
+        router.push(redirectTo)
+      }
     }
     run()
   }, [code])
