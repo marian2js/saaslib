@@ -11,7 +11,10 @@ import {
 import { signOutServer, verifyEmail, verifyOAuthCode } from '../services'
 import { BaseLoggedInUser, FormState } from '../types'
 
-export function useSignInActionState(redirectTo: string = '/', initialState?: FormState<BaseLoggedInUser>) {
+export function useSignInActionState({
+  redirectTo = '/',
+  initialState,
+}: { redirectTo?: string; initialState?: FormState<BaseLoggedInUser> } = {}) {
   const router = useRouter()
   const [state, signIn] = useActionState(
     passwordSignInFormAction,
@@ -30,7 +33,10 @@ export function useSignInActionState(redirectTo: string = '/', initialState?: Fo
   return [state, signIn] as const
 }
 
-export function useSignUpActionState(redirectTo: string = '/?verifyEmail=true', initialState?: FormState) {
+export function useSignUpActionState({
+  redirectTo = '/welcome',
+  initialState,
+}: { redirectTo?: string; initialState?: FormState } = {}) {
   const router = useRouter()
   const [state, signUp] = useActionState(passwordSignUpFormAction, initialState ?? { success: false, error: null })
 

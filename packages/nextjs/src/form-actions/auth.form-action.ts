@@ -7,7 +7,8 @@ export async function passwordSignUpFormAction(prevState: FormState, formData: F
   const password = formData.get('password') as string
 
   try {
-    await passwordSignUp(email, password)
+    const user = await passwordSignUp(email, password)
+    localStorage.setItem('user', JSON.stringify(user))
     return { success: true, error: null }
   } catch (err) {
     return { success: false, error: (err as Error).message }
