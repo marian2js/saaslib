@@ -13,8 +13,13 @@ import { BaseLoggedInUser, FormState } from '../types'
 
 export function useSignInActionState({
   redirectTo = '/',
+  onSuccess,
   initialState,
-}: { redirectTo?: string; initialState?: FormState<BaseLoggedInUser> } = {}) {
+}: {
+  redirectTo?: string
+  onSuccess?: (user?: BaseLoggedInUser) => void
+  initialState?: FormState<BaseLoggedInUser>
+} = {}) {
   const router = useRouter()
   const [state, signIn] = useActionState(
     passwordSignInFormAction,
@@ -26,7 +31,11 @@ export function useSignInActionState({
 
   useEffect(() => {
     if (state.success) {
-      router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/')
+      if (onSuccess) {
+        onSuccess(state.data)
+      } else {
+        router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/')
+      }
     }
   }, [state.success])
 
