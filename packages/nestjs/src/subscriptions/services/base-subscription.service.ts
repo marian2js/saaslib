@@ -9,7 +9,7 @@ import { UserSubscription } from '../models/user-subscription.model'
 @Injectable()
 export class BaseSubscriptionService<U extends BaseUser> {
   private readonly logger = new Logger(BaseSubscriptionService.name)
-  private readonly stripe: Stripe
+  protected readonly stripe: Stripe
 
   constructor(@Inject('SL_OPTIONS') protected options: SaaslibOptions) {
     const secretKey = process.env.STRIPE_SECRET_KEY
@@ -199,5 +199,84 @@ export class BaseSubscriptionService<U extends BaseUser> {
     this.logger.debug('Webhook ID:', webhookEndpoint.id)
     this.logger.debug('Webhook Secret:', webhookEndpoint.secret)
     return webhookEndpoint
+  }
+
+  /**
+   * Retrieves all payments from Stripe and aggregates the total (price) per month and per country.
+   */
+  async getMonthlyPaymentTotalsByCountry(): Promise<
+    Record<string, Record<string, Array<{ total: number; currency: string }>>>
+  > {
+    if (!this.stripe) {
+      throw new Error('Stripe is not initialized.')
+    }
+
+    const zeroDecimalCurrencies = new Set([
+      'BIF',
+      'CLP',
+      'DJF',
+      'GNF',
+      'JPY',
+      'KMF',
+      'KRW',
+      'MGA',
+      'PYG',
+      'RWF',
+      'UGX',
+      'VND',
+      'VUV',
+      'XAF',
+      'XOF',
+      'XPF',
+    ])
+    const aggregate: Record<string, Record<string, Record<string, number>>> = {}
+
+    for await (const invoice of this.stripe.invoices.list({
+      status: 'paid',
+      expand: ['data.customer'],
+    })) {
+      let country = 'unknown'
+      const customer = invoice.customer
+
+      if (typeof customer === 'string') {
+        this.logger.warn(`Invoice ${invoice.id} has a string customer ID instead of expanded object.`)
+      } else if (customer && 'deleted' in customer && customer.deleted) {
+        country = 'unknown'
+      } else if (customer && 'address' in customer) {
+        const address = (customer as Stripe.Customer).address
+        country = (address?.country || 'unknown').toUpperCase()
+      } else {
+        country = 'unknown'
+      }
+
+      const paidAt = invoice.status_transitions?.paid_at
+      if (!paidAt) {
+        this.logger.warn(`Invoice ${invoice.id} is paid but has no paid_at timestamp. Skipping.`)
+        continue
+      }
+      const date = new Date(paidAt * 1000)
+      const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+      const currencyCode = invoice.currency.toUpperCase()
+      const isZeroDecimal = zeroDecimalCurrencies.has(currencyCode)
+      const amount = isZeroDecimal ? invoice.amount_paid : invoice.amount_paid / 100
+
+      if (!aggregate[yearMonth]) aggregate[yearMonth] = {}
+      if (!aggregate[yearMonth][country]) aggregate[yearMonth][country] = {}
+      aggregate[yearMonth][country][currencyCode] = (aggregate[yearMonth][country][currencyCode] || 0) + amount
+    }
+
+    const result: Record<string, Record<string, Array<{ total: number; currency: string }>>> = {}
+    for (const [yearMonth, countries] of Object.entries(aggregate)) {
+      result[yearMonth] = {}
+      for (const [country, currencies] of Object.entries(countries)) {
+        result[yearMonth][country] = Object.entries(currencies).map(([currency, total]) => ({
+          total,
+          currency,
+        }))
+      }
+    }
+
+    return result
   }
 }
