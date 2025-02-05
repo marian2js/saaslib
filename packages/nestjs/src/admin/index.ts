@@ -1,2 +1,1 @@
-export * from './base-admin.controller'
-export * from './guards/admin-role.guard'
+export * from './guards/base-admin-role.guard'
