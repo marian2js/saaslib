@@ -1,6 +1,6 @@
 {
   "name": "@saaslib/nextjs",
-  "version": "0.0.38",
+  "version": "0.0.40",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
