@@ -50,6 +50,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
       ...(user.stripeCustomerId ? { customer: user.stripeCustomerId } : { customer_email: user.email }),
       success_url: successUrl,
       cancel_url: cancelUrl,
+      automatic_tax: { enabled: true },
       ...(options.subscriptionData ? { subscription_data: options.subscriptionData } : {}),
     })
 
