@@ -17,4 +17,5 @@ export type BaseUser = {
   name?: string
   avatar?: string
   subscriptions?: Record<string, UserSubscription>
+  role?: string
 }
