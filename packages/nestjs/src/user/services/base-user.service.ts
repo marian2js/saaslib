@@ -21,6 +21,7 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
       email: user.email,
       avatar: user.avatar,
       subscriptions: this.getSubscriptionsApiObject(user),
+      role: user.role,
     }
   }
 
