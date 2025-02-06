@@ -9,6 +9,7 @@ export type FetchApiOptions = RequestInit & {
   initialDelayMs?: number
   maxDelayMs?: number
   backoffMultiplier?: number
+  nullOn404?: boolean
 }
 
 export type FetchWithAuthOptions = FetchApiOptions & {
@@ -70,6 +71,9 @@ export async function fetchApi<T>(path: string, options?: FetchApiOptions): Prom
 
   if (data?.error) {
     if (data.statusCode === 404) {
+      if (options?.nullOn404) {
+        return null as T
+      }
       notFound()
     }
     throw new FetchApiError(data)
