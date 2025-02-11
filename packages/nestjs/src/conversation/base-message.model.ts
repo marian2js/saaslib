@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Types } from 'mongoose'
+import { OwneableModel } from '../owneable'
 
 @Schema()
-export class BaseMessage {
+export class BaseMessage extends OwneableModel {
   @Prop({ required: true, enum: ['user', 'assistant', 'system'] })
   role: string
 
@@ -11,9 +12,6 @@ export class BaseMessage {
 
   @Prop({ type: Types.ObjectId, ref: 'BaseConversation', required: true })
   conversation: Types.ObjectId
-
-  @Prop({ required: true, default: Date.now })
-  createdAt: Date
 }
 
 export const BaseMessageSchema = SchemaFactory.createForClass(BaseMessage)

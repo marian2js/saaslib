@@ -4,22 +4,43 @@ import { OwneableEntityService } from '../owneable'
 import { BaseUser } from '../user'
 import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
 import { BaseMessage } from './base-message.model'
+import { BaseMessageService } from './base-message.service'
 
 @Injectable()
 export abstract class BaseConversationService<
   TMessage extends BaseMessage = BaseMessage,
-  TVisibility extends BaseConversationVisibility = BaseConversationVisibility,
-  T extends BaseConversation<TMessage, TVisibility> = BaseConversation<TMessage, TVisibility>,
+  T extends BaseConversation = BaseConversation,
   U extends BaseUser = BaseUser,
 > extends OwneableEntityService<T, U> {
   constructor(
     model: Model<T>,
-    protected readonly messageModel: Model<TMessage>,
+    protected readonly messageService: BaseMessageService<TMessage, U>,
   ) {
     super(model)
   }
 
-  protected abstract sendPromptToAI(conversation: T, prompt: string): Promise<void>
+  abstract processPromptWithAI(conversation: T, prompt: string): Promise<void>
+
+  protected async addAssistantMessage(conversation: T, content: string): Promise<TMessage> {
+    // Create the assistant message using message service
+    const message = await this.messageService.create({
+      role: 'assistant',
+      content,
+      conversation: conversation._id,
+      owner: conversation.owner,
+    } as TMessage)
+
+    // Update conversation lastMessageAt
+    await this.updateById(conversation._id, {
+      lastMessageAt: new Date(),
+    } as unknown as Partial<T>)
+
+    return message
+  }
+
+  async createMessage(data: Partial<TMessage>): Promise<TMessage> {
+    return this.messageService.create(data as TMessage)
+  }
 
   canView(conversation: T, user?: U): boolean {
     return (
@@ -29,11 +50,18 @@ export abstract class BaseConversationService<
   }
 
   async getApiObject(conversation: T): Promise<Record<string, unknown>> {
+    const messages = await this.messageService.findMany(
+      { conversation: conversation._id },
+      {
+        sort: { _id: -1 },
+        limit: 10,
+      },
+    )
     return {
       id: conversation._id,
-      owner: conversation.owner._id.toString(),
+      owner: conversation.owner.toString(),
       title: conversation.title,
-      messages: conversation.messages,
+      messages: messages,
       lastMessageAt: conversation.lastMessageAt,
       visibility: conversation.visibility,
     }
@@ -44,7 +72,6 @@ export abstract class BaseConversationService<
       id: conversation._id,
       title: conversation.title,
       lastMessageAt: conversation.lastMessageAt,
-      messageCount: conversation.messages.length,
       visibility: conversation.visibility,
     }
   }
@@ -55,27 +82,25 @@ export abstract class BaseConversationService<
   async createConversationWithPrompt(
     owner: U,
     prompt: string,
-    visibility: TVisibility = BaseConversationVisibility.Private as TVisibility,
+    visibility: BaseConversationVisibility = BaseConversationVisibility.Private,
   ): Promise<T> {
     // Create the conversation
     const conversation = await this.create({
       owner: owner._id,
       visibility,
+      lastMessageAt: new Date(),
     } as T)
 
-    // Create the initial message
-    const message = await this.messageModel.create({
+    // Create the initial message using message service
+    await this.messageService.create({
       role: 'user',
       content: prompt,
       conversation: conversation._id,
-    })
-
-    // Update conversation with the message
-    await this.updateById(conversation._id, { messages: [message._id] })
-    conversation.messages = [message._id]
+      owner: owner._id,
+    } as TMessage)
 
     // Process AI response asynchronously
-    this.sendPromptToAI(conversation, prompt).catch(console.error)
+    this.processPromptWithAI(conversation, prompt).catch(console.error)
 
     return conversation
   }

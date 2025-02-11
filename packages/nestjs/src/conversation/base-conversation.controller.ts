@@ -1,21 +1,20 @@
-import { Get, Injectable, NotFoundException, Param, Query, Req, UseGuards } from '@nestjs/common'
+import { Get, Injectable, NotFoundException, Param, Req, UseGuards } from '@nestjs/common'
 import { Request } from 'express'
 import { Types } from 'mongoose'
 import { OwneableEntityController } from '../owneable'
 import { BaseUser, BaseUserService, OptionalUserGuard } from '../user'
-import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
+import { BaseConversation } from './base-conversation.model'
 import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
 
 @Injectable()
 export abstract class BaseConversationController<
   TMessage extends BaseMessage = BaseMessage,
-  TVisibility extends BaseConversationVisibility = BaseConversationVisibility,
-  T extends BaseConversation<TMessage, TVisibility> = BaseConversation<TMessage, TVisibility>,
+  T extends BaseConversation = BaseConversation,
   U extends BaseUser = BaseUser,
 > extends OwneableEntityController<T, U> {
   constructor(
-    protected conversationService: BaseConversationService<TMessage, TVisibility, T, U>,
+    protected conversationService: BaseConversationService<TMessage, T, U>,
     protected userService: BaseUserService<U>,
   ) {
     super(conversationService, userService)
@@ -23,19 +22,10 @@ export abstract class BaseConversationController<
 
   @UseGuards(OptionalUserGuard)
   @Get('/:id')
-  async getOne(@Req() req: Request, @Param('id') id: string, @Query('page') page?: number) {
-    const doc = await this.conversationService['model']
-      .findOne({
-        _id: new Types.ObjectId(id),
-      })
-      .populate({
-        path: 'messages',
-        options: {
-          sort: { _id: -1 },
-          limit: 10,
-          skip: page ? (page - 1) * 10 : 0,
-        },
-      })
+  async getOne(@Req() req: Request, @Param('id') id: string) {
+    const doc = await this.conversationService.findOne({
+      _id: new Types.ObjectId(id),
+    })
 
     if (!doc) {
       throw new NotFoundException()
@@ -52,15 +42,18 @@ export abstract class BaseConversationController<
     }
   }
 
-  async beforeCreate(conversation: T): Promise<T> {
-    conversation.lastMessageAt = new Date()
-    return conversation
-  }
+  async afterCreate(conversation: T): Promise<void> {
+    const prompt = (conversation as any).prompt
 
-  async beforeUpdate(existing: T, update: Partial<T>): Promise<Partial<T>> {
-    if (update.messages) {
-      update.lastMessageAt = new Date()
-    }
-    return update
+    // Create the initial message
+    await this.conversationService.createMessage({
+      role: 'user',
+      content: prompt,
+      conversation: conversation._id,
+      owner: conversation.owner,
+    } as Partial<TMessage>)
+
+    // Process the AI response
+    await this.conversationService.processPromptWithAI(conversation, prompt)
   }
 }
