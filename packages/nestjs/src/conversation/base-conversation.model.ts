@@ -1,28 +1,30 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { Prop, Schema } from '@nestjs/mongoose'
+import { Types } from 'mongoose'
 import { OwneableModel } from '../owneable'
+import { BaseMessage } from './base-message.model'
 
-@Schema()
-export class BaseMessage {
-  @Prop({ required: true, enum: ['user', 'assistant', 'system'] })
-  role: string
-
-  @Prop({ required: true })
-  content: string
+export enum BaseConversationVisibility {
+  Private = 'private',
+  Public = 'public',
 }
 
-export const BaseMessageSchema = SchemaFactory.createForClass(BaseMessage)
-
 @Schema()
-export abstract class BaseConversation<TMessage extends BaseMessage = BaseMessage> extends OwneableModel {
+export abstract class BaseConversation<
+  TMessage extends BaseMessage = BaseMessage,
+  TVisibility extends BaseConversationVisibility = BaseConversationVisibility,
+> extends OwneableModel {
   @Prop()
   title?: string
 
-  @Prop()
-  description?: string
-
-  @Prop({ type: [BaseMessageSchema], default: [] })
-  messages: TMessage[]
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'BaseMessage' }], default: [] })
+  messages: Types.ObjectId[] | TMessage[]
 
   @Prop({ required: true, default: Date.now })
   lastMessageAt: Date
+
+  @Prop({
+    required: true,
+    default: BaseConversationVisibility.Private,
+  })
+  visibility: TVisibility
 }

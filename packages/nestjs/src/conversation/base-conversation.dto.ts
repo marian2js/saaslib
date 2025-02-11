@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsArray, IsDate, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { BaseConversationVisibility } from './base-conversation.model'
 
 export class BaseMessageDto {
   @IsEnum(['user', 'assistant', 'system'])
@@ -13,7 +14,7 @@ export class BaseMessageDto {
   timestamp: Date
 }
 
-export class BaseCreateConversationDto {
+export class BaseCreateConversationDto<TVisibility extends BaseConversationVisibility = BaseConversationVisibility> {
   @IsString()
   title: string
 
@@ -28,9 +29,13 @@ export class BaseCreateConversationDto {
   @ValidateNested({ each: true })
   @Type(() => BaseMessageDto)
   messages: BaseMessageDto[]
+
+  @IsOptional()
+  @IsEnum(BaseConversationVisibility)
+  visibility?: TVisibility
 }
 
-export class BaseUpdateConversationDto {
+export class BaseUpdateConversationDto<TVisibility extends BaseConversationVisibility = BaseConversationVisibility> {
   @IsOptional()
   @IsString()
   title?: string
@@ -44,4 +49,8 @@ export class BaseUpdateConversationDto {
   @ValidateNested({ each: true })
   @Type(() => BaseMessageDto)
   messages?: BaseMessageDto[]
+
+  @IsOptional()
+  @IsEnum(BaseConversationVisibility)
+  visibility?: TVisibility
 }

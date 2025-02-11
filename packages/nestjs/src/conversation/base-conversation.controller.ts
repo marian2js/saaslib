@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common'
-import { OwneableEntityController, OwneableEntityOptions } from '../owneable'
+import { OwneableEntityController } from '../owneable'
 import { BaseUser, BaseUserService } from '../user'
-import { BaseConversation, BaseMessage } from './base-conversation.model'
+import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
 import { BaseConversationService } from './base-conversation.service'
+import { BaseMessage } from './base-message.model'
 
 @Injectable()
 export abstract class BaseConversationController<
   TMessage extends BaseMessage = BaseMessage,
-  T extends BaseConversation<TMessage> = BaseConversation<TMessage>,
+  TVisibility extends BaseConversationVisibility = BaseConversationVisibility,
+  T extends BaseConversation<TMessage, TVisibility> = BaseConversation<TMessage, TVisibility>,
   U extends BaseUser = BaseUser,
 > extends OwneableEntityController<T, U> {
-  abstract options: OwneableEntityOptions<T>
-
   constructor(
-    protected conversationService: BaseConversationService<TMessage, T, U>,
+    protected conversationService: BaseConversationService<TMessage, TVisibility, T, U>,
     protected userService: BaseUserService<U>,
   ) {
     super(conversationService, userService)
