@@ -60,6 +60,10 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
   async processPromptWithAI(): Promise<void> {
     // Mock implementation
   }
+
+  streamPromptWithAI(): AsyncIterable<string> {
+    throw new Error('Mock implementation.')
+  }
 }
 
 describe('BaseConversationService', () => {

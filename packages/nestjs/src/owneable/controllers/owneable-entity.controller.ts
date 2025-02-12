@@ -95,7 +95,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
 
     const entityToCreate = await this.beforeCreate({ ...entity, owner: user._id })
     const created = await this.owneableEntityService.create(entityToCreate)
-    await this.afterCreate(created)
+    await this.afterCreate(created, entityToCreate)
     const apiRes = this.owneableEntityService.getApiObject(created, user)
     return {
       item: isPromise(apiRes) ? await apiRes : apiRes,
@@ -106,7 +106,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
     return entity
   }
 
-  async afterCreate(_entity: T) {
+  async afterCreate(_entity: T, _original: T) {
     // no-op
   }
 

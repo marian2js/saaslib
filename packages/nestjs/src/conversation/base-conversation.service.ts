@@ -21,6 +21,13 @@ export abstract class BaseConversationService<
 
   abstract processPromptWithAI(conversation: T, prompt: string): Promise<void>
 
+  /**
+   * Process a prompt with AI and return a stream of response chunks
+   * @param conversation The conversation to process the prompt for
+   * @param prompt The prompt to process
+   */
+  abstract streamPromptWithAI(conversation: T, prompt: string): AsyncIterable<string>
+
   protected async addAssistantMessage(conversation: T, content: string): Promise<TMessage> {
     // Create the assistant message using message service
     const message = await this.messageService.create({
