@@ -1,17 +1,14 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { Prop, Schema } from '@nestjs/mongoose'
 import { Types } from 'mongoose'
 import { OwneableModel } from '../owneable'
 
 @Schema()
-export class BaseMessage extends OwneableModel {
+export abstract class BaseMessage<T = string> extends OwneableModel {
+  @Prop({ type: Types.ObjectId, ref: 'BaseConversation', required: true })
+  conversation: Types.ObjectId
+
   @Prop({ required: true, enum: ['user', 'assistant', 'system'] })
   role: string
 
-  @Prop({ required: true })
-  content: string
-
-  @Prop({ type: Types.ObjectId, ref: 'BaseConversation', required: true })
-  conversation: Types.ObjectId
+  abstract content: T
 }
-
-export const BaseMessageSchema = SchemaFactory.createForClass(BaseMessage)

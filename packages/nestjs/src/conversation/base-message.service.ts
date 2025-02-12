@@ -29,7 +29,7 @@ export abstract class BaseMessageService<
     return message.owner.toString() === user?._id?.toString()
   }
 
-  async getApiObject(message: TMessage): Promise<Record<string, unknown>> {
+  async getApiObject(message: TMessage, _owner: U): Promise<Record<string, unknown>> {
     return {
       id: message._id,
       role: message.role,
@@ -39,7 +39,7 @@ export abstract class BaseMessageService<
     }
   }
 
-  async getApiObjectForList(message: TMessage): Promise<Record<string, unknown>> {
-    return this.getApiObject(message)
+  async getApiObjectForList(message: TMessage, _owner: U): Promise<Record<string, unknown>> {
+    return this.getApiObject(message, _owner)
   }
 }

@@ -19,34 +19,34 @@ export abstract class BaseConversationService<
     super(model)
   }
 
-  abstract processPromptWithAI(conversation: T, prompt: string): Promise<void>
+  abstract generateResponse(conversation: T, prompt: string): Promise<TMessage['content']>
 
   /**
-   * Process a prompt with AI and return a stream of response chunks
+   * Process a prompt and return a stream of response chunks
    * @param conversation The conversation to process the prompt for
    * @param prompt The prompt to process
    */
-  abstract streamPromptWithAI(conversation: T, prompt: string): AsyncIterable<string>
+  abstract streamResponse(conversation: T, prompt: string): AsyncIterable<string>
 
-  protected async addAssistantMessage(conversation: T, content: string): Promise<TMessage> {
-    // Create the assistant message using message service
-    const message = await this.messageService.create({
+  async createResponse(conversation: T, prompt: string): Promise<TMessage> {
+    const content = await this.generateResponse(conversation, prompt)
+    const data = {
       role: 'assistant',
       content,
       conversation: conversation._id,
       owner: conversation.owner,
-    } as TMessage)
-
-    // Update conversation lastMessageAt
-    await this.updateById(conversation._id, {
-      lastMessageAt: new Date(),
-    } as unknown as Partial<T>)
-
-    return message
+    } as TMessage
+    return await this.messageService.create(data as TMessage)
   }
 
   async createMessage(data: Partial<TMessage>): Promise<TMessage> {
-    return this.messageService.create(data as TMessage)
+    const message = await this.messageService.create(data as TMessage)
+    if (data.role === 'user') {
+      await this.updateById(data.conversation, {
+        $set: { lastMessageAt: new Date() },
+      })
+    }
+    return message
   }
 
   canView(conversation: T, user?: U): boolean {
@@ -56,7 +56,7 @@ export abstract class BaseConversationService<
     )
   }
 
-  async getApiObject(conversation: T): Promise<Record<string, unknown>> {
+  async getApiObject(conversation: T, _owner: U): Promise<Record<string, unknown>> {
     const messages = await this.messageService.findMany(
       { conversation: conversation._id },
       {
@@ -64,17 +64,18 @@ export abstract class BaseConversationService<
         limit: 10,
       },
     )
+    const messageApiData = await Promise.all(messages.map((m) => this.messageService.getApiObjectForList(m, _owner)))
     return {
       id: conversation._id,
       owner: conversation.owner.toString(),
       title: conversation.title,
-      messages: messages,
+      messages: messageApiData.reverse(),
       lastMessageAt: conversation.lastMessageAt,
       visibility: conversation.visibility,
     }
   }
 
-  async getApiObjectForList(conversation: T): Promise<Record<string, unknown>> {
+  async getApiObjectForList(conversation: T, _owner: U): Promise<Record<string, unknown>> {
     return {
       id: conversation._id,
       title: conversation.title,
@@ -84,9 +85,9 @@ export abstract class BaseConversationService<
   }
 
   /**
-   * Creates a conversation with an initial user message and triggers AI processing
+   * Creates a conversation with an initial user message
    */
-  async createConversationWithPrompt(
+  async createConversation(
     owner: U,
     prompt: string,
     visibility: BaseConversationVisibility = BaseConversationVisibility.Private,
@@ -105,9 +106,6 @@ export abstract class BaseConversationService<
       conversation: conversation._id,
       owner: owner._id,
     } as TMessage)
-
-    // Process AI response asynchronously
-    this.processPromptWithAI(conversation, prompt).catch(console.error)
 
     return conversation
   }

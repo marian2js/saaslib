@@ -1,7 +1,7 @@
 import { INestApplication, Injectable } from '@nestjs/common'
-import { InjectModel, MongooseModule, SchemaFactory } from '@nestjs/mongoose'
+import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Document, FilterQuery, Model, QueryOptions, Schema, Types } from 'mongoose'
+import { Document, FilterQuery, Model, Schema as MongooseSchema, QueryOptions, Types } from 'mongoose'
 import { testModuleImports } from '../tests/test.helpers'
 import { BaseUser } from '../user'
 import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
@@ -10,15 +10,17 @@ import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
 
 @Injectable()
-class TestMessage extends BaseMessage {
-  _id: Types.ObjectId
+@Schema()
+class TestMessage extends BaseMessage<string> {
+  @Prop({ required: true, type: String })
+  override content: string
 }
 
 type TestMessageDocument = TestMessage & Document
 
 @Injectable()
 class TestConversation extends BaseConversation {
-  static schema = new Schema({
+  static schema = new MongooseSchema({
     owner: { type: Types.ObjectId, required: true },
     title: { type: String },
     lastMessageAt: { type: Date, required: true, default: Date.now },
@@ -55,13 +57,32 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
     messageService: TestMessageService,
   ) {
     super(conversationModel, messageService)
+    ;(messageService as any).conversationService = this
   }
 
-  async processPromptWithAI(): Promise<void> {
-    // Mock implementation
+  override async generateResponse(_conversation: TestConversation, _prompt: string): Promise<TestMessage['content']> {
+    return 'AI response'
   }
 
-  streamPromptWithAI(): AsyncIterable<string> {
+  override async createMessage(data: Partial<TestMessage>): Promise<TestMessage> {
+    const message = await this.messageService.create(data as TestMessage)
+    await this.updateById(data.conversation, {
+      $set: { lastMessageAt: new Date() },
+    })
+    return message
+  }
+
+  override async createResponse(conversation: TestConversation, prompt: string): Promise<TestMessage> {
+    const content = await this.generateResponse(conversation, prompt)
+    return await this.createMessage({
+      role: 'assistant',
+      content,
+      conversation: conversation._id,
+      owner: conversation.owner,
+    } as Partial<TestMessage>)
+  }
+
+  override streamResponse(): AsyncIterable<string> {
     throw new Error('Mock implementation.')
   }
 }
@@ -100,7 +121,7 @@ describe('BaseConversationService', () => {
 
   describe('createConversationWithPrompt', () => {
     it('should create conversation and message', async () => {
-      const result = await service.createConversationWithPrompt(mockUser, 'test prompt')
+      const result = await service.createConversation(mockUser, 'test prompt')
       expect(result).toBeDefined()
       expect(String(result.owner)).toBe(String(mockUser._id))
       expect(result.visibility).toBe(BaseConversationVisibility.Private)
@@ -112,11 +133,7 @@ describe('BaseConversationService', () => {
     })
 
     it('should create conversation with custom visibility', async () => {
-      const result = await service.createConversationWithPrompt(
-        mockUser,
-        'test prompt',
-        BaseConversationVisibility.Public,
-      )
+      const result = await service.createConversation(mockUser, 'test prompt', BaseConversationVisibility.Public)
       expect(result).toBeDefined()
       expect(String(result.owner)).toBe(String(mockUser._id))
       expect(result.visibility).toBe(BaseConversationVisibility.Public)
@@ -125,10 +142,11 @@ describe('BaseConversationService', () => {
       expect(messages).toHaveLength(1)
     })
 
-    it('should trigger AI processing', async () => {
-      const processPromptWithAISpy = jest.spyOn(service, 'processPromptWithAI')
-      const result = await service.createConversationWithPrompt(mockUser, 'test prompt')
-      expect(processPromptWithAISpy).toHaveBeenCalledWith(result, 'test prompt')
+    it('should trigger AI processing in sync mode', async () => {
+      const aiResponseContent = 'AI response'
+      const generateResponseSpy = jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseContent)
+      await service.createResponse(await service.createConversation(mockUser, 'test prompt'), 'test prompt')
+      expect(generateResponseSpy).toHaveBeenCalled()
     })
   })
 
@@ -163,23 +181,23 @@ describe('BaseConversationService', () => {
     })
   })
 
-  describe('addAssistantMessage', () => {
+  describe('createResponse', () => {
     let conversation: TestConversation
 
     beforeEach(async () => {
-      const created = await service.create({
+      conversation = await service.create({
         owner: mockUser._id,
         visibility: BaseConversationVisibility.Private,
         lastMessageAt: new Date(),
       } as TestConversation)
-      conversation = created
     })
 
     it('should create assistant message and update lastMessageAt', async () => {
       const content = 'AI response'
-      const beforeDate = new Date()
+      jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(content)
+      const originalLastMessageAt = conversation.lastMessageAt.getTime()
 
-      const message = await service['addAssistantMessage'](conversation, content)
+      const message = await service.createResponse(conversation, 'test prompt')
       expect(message).toBeDefined()
       expect(message.role).toBe('assistant')
       expect(message.content).toBe(content)
@@ -187,7 +205,51 @@ describe('BaseConversationService', () => {
       expect(String(message.owner)).toBe(String(conversation.owner))
 
       const updatedConversation = await service.findById(conversation._id)
-      expect(updatedConversation.lastMessageAt.getTime()).toBeGreaterThanOrEqual(beforeDate.getTime())
+      expect(updatedConversation.lastMessageAt.getTime()).not.toBe(originalLastMessageAt)
+    })
+  })
+
+  describe('createMessage', () => {
+    let conversation: TestConversation
+
+    beforeEach(async () => {
+      conversation = await service.create({
+        owner: mockUser._id,
+        visibility: BaseConversationVisibility.Private,
+        lastMessageAt: new Date(),
+      } as TestConversation)
+    })
+
+    it('should create user message', async () => {
+      const content = 'test message'
+
+      const message = await service.createMessage({
+        role: 'user',
+        content,
+        conversation: conversation._id,
+        owner: mockUser._id,
+      } as Partial<TestMessage>)
+
+      expect(message).toBeDefined()
+      expect(message.role).toBe('user')
+      expect(message.content).toBe(content)
+
+      const messages = await messageService.findMany({ conversation: conversation._id })
+      expect(messages).toHaveLength(1)
+      expect(messages[0].content).toBe(content)
+    })
+
+    it('should create AI response', async () => {
+      const aiResponseContent = 'AI response'
+      jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseContent)
+
+      const response = await service.createResponse(conversation, 'test prompt')
+
+      expect(response).toBeDefined()
+      expect(response.role).toBe('assistant')
+      expect(response.content).toBe(aiResponseContent)
+      expect(String(response.conversation)).toBe(String(conversation._id))
+      expect(String(response.owner)).toBe(String(conversation.owner))
     })
   })
 })

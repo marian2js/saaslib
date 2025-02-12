@@ -2,10 +2,12 @@ import {
   Body,
   ForbiddenException,
   Get,
+  HttpException,
   Injectable,
   NotFoundException,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -17,6 +19,7 @@ import { BaseUser, BaseUserService, OptionalUserGuard, UserGuard } from '../user
 import { BaseConversation } from './base-conversation.model'
 import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
+import { BaseMessageService } from './base-message.service'
 
 type ConversationWithPrompt = {
   prompt: string
@@ -30,6 +33,7 @@ export abstract class BaseConversationController<
 > extends OwneableEntityController<T, U> {
   constructor(
     protected conversationService: BaseConversationService<TMessage, T, U>,
+    protected messageService: BaseMessageService<TMessage, U>,
     protected userService: BaseUserService<U>,
   ) {
     super(conversationService, userService)
@@ -51,56 +55,113 @@ export abstract class BaseConversationController<
     if (!this.conversationService.canView(doc, user)) {
       throw new NotFoundException()
     }
-    const apiRes = await this.conversationService.getApiObject(doc)
+    const apiRes = await this.conversationService.getApiObject(doc, user)
     return {
       item: apiRes,
     }
   }
 
   @UseGuards(UserGuard)
-  @Post('/stream')
-  async createWithStream(@Req() req: Request, @Body() entity: T & ConversationWithPrompt, @Res() res?: Response) {
+  @Post()
+  async createConversation(
+    @Req() req: Request,
+    @Body() entity: T & ConversationWithPrompt,
+    @Res() res: Response,
+    @Query('stream') stream?: boolean,
+    @Query('async') async?: boolean,
+  ) {
     const userId = (req.user as { id: string }).id
     const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
 
-    if (!this.owneableEntityService.canCreate(entity, user)) {
-      throw new ForbiddenException()
-    }
-
-    // Create conversation using the service
-    const conversation = await this.conversationService.createConversationWithPrompt(user, entity.prompt)
-
-    // Set up SSE headers
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-
-    // Stream the AI response
-    const messageStream = this.conversationService.streamPromptWithAI(conversation, entity.prompt)
-
-    // Handle the stream
-    for await (const chunk of messageStream) {
-      res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`)
-    }
-
-    res.end()
-  }
-
-  async afterCreate(conversation: T, original: T & Partial<ConversationWithPrompt>): Promise<void> {
-    const prompt = original.prompt
-    if (!prompt) {
+    let conversationId: string
+    try {
+      const response = await super.create(req, entity)
+      conversationId = response.item.id as string
+    } catch (e) {
+      const error = e as HttpException
+      res.status(error.getStatus()).json({ error: error.message })
       return
     }
 
-    // Create the initial message
-    await this.conversationService.createMessage({
+    // Create the conversation and initial message
+    const conversation = await this.conversationService.findById(conversationId)
+    await this.messageService.create({
       role: 'user',
-      content: prompt,
+      content: entity.prompt,
       conversation: conversation._id,
       owner: conversation.owner,
     } as Partial<TMessage>)
 
-    // Process the AI response
-    await this.conversationService.processPromptWithAI(conversation, prompt)
+    if (stream) {
+      // Set up SSE headers
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection', 'keep-alive')
+
+      // Stream the AI response
+      const messageStream = this.conversationService.streamResponse(conversation, entity.prompt)
+
+      // Handle the stream
+      for await (const chunk of messageStream) {
+        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`)
+      }
+
+      res.end()
+    } else {
+      const assistantMessagePromise = this.conversationService.createResponse(conversation, entity.prompt)
+      if (!async) {
+        // the message is created and returned fetched by getApiObject
+        await assistantMessagePromise
+      }
+
+      const data = {
+        item: await this.conversationService.getApiObject(conversation, user),
+      }
+      res.json(data)
+      return data
+    }
+  }
+
+  @UseGuards(UserGuard)
+  @Post('/:id/messages')
+  async createMessage(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('id') id: string,
+    @Body() body: { content: string },
+    @Query('stream') stream?: boolean,
+    @Query('async') async?: boolean,
+  ) {
+    const userId = (req.user as { id: string }).id
+    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+
+    const conversation = await this.conversationService.findOne({
+      _id: new Types.ObjectId(id),
+    })
+    if (!conversation) {
+      throw new NotFoundException()
+    }
+    if (!this.conversationService.canEdit(conversation, user)) {
+      throw new ForbiddenException()
+    }
+
+    // Create the message
+    const message = await this.conversationService.createMessage({
+      role: 'user',
+      content: body.content,
+      conversation: conversation._id,
+      owner: user._id,
+    } as Partial<TMessage>)
+
+    const assistantPromise = this.conversationService.createResponse(conversation, body.content)
+
+    const data = {
+      messages: [
+        await this.messageService.getApiObjectForList(message, user),
+        ...(!async ? [await this.messageService.getApiObjectForList(await assistantPromise, user)] : []),
+      ],
+    }
+    res.json(data)
+    return data
   }
 }

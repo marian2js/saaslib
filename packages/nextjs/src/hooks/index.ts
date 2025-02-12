@@ -1,4 +1,5 @@
 export * from './auth.hooks'
+export * from './conversation.hooks'
 export * from './fetch.hooks'
 export * from './newsletter.hooks'
 export * from './owneable.hooks'
