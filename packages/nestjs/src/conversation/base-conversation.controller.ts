@@ -27,7 +27,7 @@ type ConversationWithPrompt = {
 
 @Injectable()
 export abstract class BaseConversationController<
-  TMessage extends BaseMessage = BaseMessage,
+  TMessage extends BaseMessage<any> = BaseMessage<any>,
   T extends BaseConversation & Partial<ConversationWithPrompt> = BaseConversation,
   U extends BaseUser = BaseUser,
 > extends OwneableEntityController<T, U> {

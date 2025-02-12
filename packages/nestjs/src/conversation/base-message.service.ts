@@ -7,7 +7,7 @@ import { BaseMessage } from './base-message.model'
 
 @Injectable()
 export abstract class BaseMessageService<
-  TMessage extends BaseMessage = BaseMessage,
+  TMessage extends BaseMessage<any> = BaseMessage<any>,
   U extends BaseUser = BaseUser,
 > extends OwneableEntityService<TMessage, U> {
   constructor(
