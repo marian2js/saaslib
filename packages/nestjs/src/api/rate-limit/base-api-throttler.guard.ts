@@ -5,8 +5,17 @@ import { BaseUser } from '../../user'
 import { ApiKey } from '../apikey/models/apikey.model'
 import { BaseApiKeyService } from '../apikey/services/base-apikey.service'
 
+export type PathThrottlingConfig = {
+  limit?: number
+  ttl?: number
+  unlimited?: boolean
+  disabled?: boolean
+}
+
 @Injectable()
 export class BaseApiThrottlerGuard extends ThrottlerGuard {
+  protected pathsConfig: Record<string, PathThrottlingConfig> = {}
+
   constructor(
     options: ThrottlerModuleOptions,
     storageService: ThrottlerStorage,
@@ -16,13 +25,32 @@ export class BaseApiThrottlerGuard extends ThrottlerGuard {
     super(options, storageService, reflector)
   }
 
+  /**
+   * Set the default rate limiting configuration for specific paths
+   * @param config Record of paths and their rate limiting configuration
+   */
+  setPathsConfig(config: Record<string, PathThrottlingConfig>) {
+    this.pathsConfig = config
+  }
+
   protected async handleRequest(requestProps: ThrottlerRequest): Promise<boolean> {
     const req = requestProps.context.switchToHttp().getRequest()
     const apiKeyString = this.extractApiKey(req)
     const apiKey = await this.apiKeyService.findOne({ key: apiKeyString })
 
     if (apiKey) {
-      const throttling = await this.apiKeyService.getThrottlingData(apiKey)
+      const path = req.route?.path
+      const apiKeyPathConfig = path ? apiKey.paths?.[path] : undefined
+      const defaultPathConfig = path ? this.pathsConfig[path] : undefined
+      const pathConfig = apiKeyPathConfig || defaultPathConfig
+
+      if (defaultPathConfig?.disabled && !apiKeyPathConfig) {
+        return false
+      }
+
+      // Priority order: API key path config > default path config > API key default config
+      const throttling = pathConfig || (await this.apiKeyService.getThrottlingData(apiKey))
+
       if (throttling.unlimited) {
         return true
       }
@@ -35,11 +63,12 @@ export class BaseApiThrottlerGuard extends ThrottlerGuard {
         requestProps.throttler.ttl = throttling.ttl
       }
       requestProps.throttler.name = apiKey.owner.toString()
-    } else if (apiKeyString) {
-      return false
+
+      return super.handleRequest(requestProps)
     }
 
-    return super.handleRequest(requestProps)
+    // No API key present or invalid API key, deny access
+    return false
   }
 
   protected async getTracker(req: Record<string, any>): Promise<string> {

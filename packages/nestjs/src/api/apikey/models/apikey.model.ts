@@ -17,6 +17,9 @@ export class ApiKey extends OwneableModel {
 
   @Prop()
   unlimited?: boolean
+
+  @Prop({ type: Object })
+  paths?: Record<string, { limit?: number; ttl?: number; unlimited?: boolean }>
 }
 
 export const ApiKeySchema = SchemaFactory.createForClass(ApiKey)
