@@ -3,9 +3,30 @@
 import { useCallback } from 'react'
 import { BaseConversation, BaseMessage, ConversationVisibility } from '../types/conversation.types'
 import { useApiCallback, useApiFetch } from './fetch.hooks'
+import { useDeleteOwnableItem, useUpdateOwnableItem } from './owneable.hooks'
 
-export function useFetchConversations<T extends BaseConversation>() {
-  return useApiFetch<{ items: T[] }>('/conversations')
+interface FetchConversationsOptions {
+  orderBy?: string
+  page?: number
+  limit?: number
+}
+
+export function useFetchConversations<T extends BaseConversation>(options: FetchConversationsOptions = {}) {
+  const defaultOptions = { orderBy: 'createdAt:-1' }
+  const urlOptions = { ...defaultOptions, ...options }
+
+  const params = new URLSearchParams()
+  if (urlOptions.orderBy) {
+    params.set('orderBy', urlOptions.orderBy)
+  }
+  if (urlOptions.page !== undefined) {
+    params.set('page', urlOptions.page.toString())
+  }
+  if (urlOptions.limit !== undefined) {
+    params.set('limit', urlOptions.limit.toString())
+  }
+  const queryString = params.toString()
+  return useApiFetch<{ items: T[] }>(`/conversations${queryString ? `?${queryString}` : ''}`)
 }
 
 export function useFetchConversation<T extends BaseConversation>(conversationId: string) {
@@ -49,4 +70,20 @@ export function useSendConversationMessage<TMessage extends BaseMessage>() {
   )
 
   return { sendMessage, loading, error }
+}
+
+export function useUpdateConversation() {
+  return useUpdateOwnableItem('conversations')
+}
+
+export function useDeleteConversation() {
+  return useDeleteOwnableItem('conversations')
+}
+
+export function useUpdateMessage() {
+  return useUpdateOwnableItem('messages')
+}
+
+export function useDeleteMessage() {
+  return useDeleteOwnableItem('messages')
 }
