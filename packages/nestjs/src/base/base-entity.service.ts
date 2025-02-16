@@ -182,6 +182,18 @@ export abstract class BaseEntityService<T> {
     return result
   }
 
+  async deleteMany(filter: FilterQuery<T>): Promise<{ acknowledged: boolean; deletedCount: number }> {
+    if (this.isCacheEnabled()) {
+      const docsToRemove = this.filterCachedDocuments(filter)
+      const result = await this.model.deleteMany(filter).exec()
+      if (result.deletedCount > 0) {
+        docsToRemove.forEach((doc) => this.removeFromCache(doc._id.toString()))
+      }
+      return result
+    }
+    return this.model.deleteMany(filter).exec()
+  }
+
   aggregate(pipeline: any[]) {
     return this.model.aggregate(pipeline).exec()
   }

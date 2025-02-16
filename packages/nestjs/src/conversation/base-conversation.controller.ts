@@ -164,4 +164,9 @@ export abstract class BaseConversationController<
     res.json(data)
     return data
   }
+
+  async afterDelete(_userId: string, _id: string): Promise<void> {
+    // Delete all messages belonging to this conversation
+    await this.messageService.deleteMany({ conversation: _id })
+  }
 }
