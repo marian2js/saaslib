@@ -48,10 +48,16 @@ export abstract class BaseEntityService<T> {
   }
 
   async findMany(filter: FilterQuery<T>, options?: QueryOptions<T>): Promise<(T & Document)[]> {
-    // Cache is only supported for these options, otherwise we skip it
-    const isCacheSupported = !options || Object.keys(options).every((key) => ['sort', 'limit', 'skip'].includes(key))
+    const optionKeys = options ? Object.keys(options) : []
 
-    if (this.isCacheEnabled() && this.isFullCacheValid() && isCacheSupported) {
+    // reading cache is only supported for these options (or no options)
+    const isCacheSupportedReading =
+      !optionKeys.length || optionKeys.every((key) => ['sort', 'limit', 'skip'].includes(key))
+
+    // writing cache is not supported if these options are present
+    const isCacheSupportedWriting = !optionKeys.some((key) => ['projection', 'lean'].includes(key))
+
+    if (this.isCacheEnabled() && this.isFullCacheValid() && isCacheSupportedReading) {
       let cachedDocs = this.filterCachedDocuments(filter)
 
       if (options?.sort) {
@@ -68,7 +74,9 @@ export abstract class BaseEntityService<T> {
     }
 
     const docs = await this.model.find(filter, null, options).exec()
-    docs.forEach((doc) => this.addToCache(doc))
+    if (isCacheSupportedWriting) {
+      docs.forEach((doc) => this.addToCache(doc))
+    }
     return docs
   }
 
