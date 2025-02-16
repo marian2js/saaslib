@@ -5,4 +5,8 @@ export interface OwneableEntityOptions<T> {
     create: ClassConstructor<Partial<T>>
     update: ClassConstructor<Partial<T>>
   }
+  pageSize?: {
+    default?: number
+    max?: number
+  }
 }

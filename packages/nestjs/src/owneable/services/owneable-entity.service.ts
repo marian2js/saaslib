@@ -13,9 +13,40 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
     return this.getApiObject(entity, owner)
   }
 
+  /**
+   * Returns the keys that are allowed to be used for sorting.
+   * By default, supports 'createdAt' which uses MongoDB's _id field for sorting.
+   */
+  protected getAllowedSortKeys(): string[] {
+    return ['createdAt']
+  }
+
+  /**
+   * Validates if the provided sort keys are allowed
+   */
+  protected validateSortKeys(sort?: Record<string, 1 | -1>): boolean {
+    if (!sort) return true
+    const allowedKeys = this.getAllowedSortKeys()
+    return Object.keys(sort).every((key) => allowedKeys.includes(key))
+  }
+
   async findManyByOwner(ownerId: Types.ObjectId | string, filter?: FilterQuery<T>, options?: QueryOptions<T>) {
     if (typeof ownerId === 'string') {
       ownerId = new Types.ObjectId(ownerId)
+    }
+    if (options?.sort) {
+      if (!this.validateSortKeys(options.sort)) {
+        throw new Error('Invalid sort keys provided')
+      }
+
+      // Map createdAt sorting to _id
+      const mappedSort: Record<string, 1 | -1> = {}
+      for (const [key, value] of Object.entries(options.sort)) {
+        if (typeof value === 'number' && (value === 1 || value === -1)) {
+          mappedSort[key === 'createdAt' ? '_id' : key] = value
+        }
+      }
+      options.sort = mappedSort
     }
     return this.findMany({ ...(filter ?? {}), owner: ownerId }, options)
   }

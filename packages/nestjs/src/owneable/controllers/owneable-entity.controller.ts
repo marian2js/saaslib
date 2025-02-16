@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common'
@@ -21,7 +22,11 @@ import { LimitExceededException } from '../../exceptions/limit-exceeded.exceptio
 import { BaseUser, BaseUserService, OptionalUserGuard, UserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
+import { ListQueryDto } from '../types/list-query.dto'
 import { OwneableEntityOptions } from '../types/owneable.types'
+
+const DEFAULT_PAGE_SIZE = 10
+const MAX_PAGE_SIZE = 100
 
 @Injectable()
 export abstract class OwneableEntityController<T extends OwneableModel, U extends BaseUser> {
@@ -34,10 +39,24 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
 
   @UseGuards(UserGuard)
   @Get()
-  async getMine(@Req() req: Request) {
+  async getMine(@Req() req: Request, @Query() query: ListQueryDto) {
     const userId = (req.user as { id: string }).id
     const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
-    const docs = await this.owneableEntityService.findManyByOwner(userId)
+
+    const defaultPageSize = this.options.pageSize?.default ?? DEFAULT_PAGE_SIZE
+    const maxPageSize = this.options.pageSize?.max ?? MAX_PAGE_SIZE
+    const limit = Math.min(query.limit ?? defaultPageSize, maxPageSize)
+    const skip = query.page ? (query.page - 1) * limit : undefined
+
+    const docs = await this.owneableEntityService.findManyByOwner(
+      userId,
+      {},
+      {
+        limit,
+        skip,
+        sort: this.parseOrderBy(query.orderBy),
+      },
+    )
     const allowedDocs = docs.filter((doc) => this.owneableEntityService.canView(doc, user))
     const items = await Promise.all(
       allowedDocs.map(async (doc) => {
@@ -45,8 +64,11 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
         return apiObject instanceof Promise ? await apiObject : apiObject
       }),
     )
+
     return {
       items,
+      limit,
+      page: query.page,
     }
   }
 
@@ -171,5 +193,19 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
 
   async afterDelete(_userId: string, _id: string) {
     // no-op
+  }
+
+  protected parseOrderBy(orderBy?: string): Record<string, 1 | -1> | undefined {
+    if (!orderBy) return undefined
+
+    const sort: Record<string, 1 | -1> = {}
+    const parts = orderBy.split(',')
+
+    for (const part of parts) {
+      const [field, order] = part.split(':')
+      sort[field] = parseInt(order) as 1 | -1
+    }
+
+    return sort
   }
 }
