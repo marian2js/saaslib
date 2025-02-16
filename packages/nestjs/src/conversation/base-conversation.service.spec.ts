@@ -60,8 +60,8 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
     ;(messageService as any).conversationService = this
   }
 
-  override async generateResponse(_conversation: TestConversation, _prompt: string): Promise<TestMessage['content']> {
-    return 'AI response'
+  override async generateResponse(_conversation: TestConversation, _prompt: string) {
+    return { message: { content: 'AI response' } }
   }
 
   override async createMessage(data: Partial<TestMessage>): Promise<TestMessage> {
@@ -73,10 +73,10 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
   }
 
   override async createResponse(conversation: TestConversation, prompt: string): Promise<TestMessage> {
-    const content = await this.generateResponse(conversation, prompt)
+    const { message } = await this.generateResponse(conversation, prompt)
     return await this.createMessage({
+      ...message,
       role: 'assistant',
-      content,
       conversation: conversation._id,
       owner: conversation.owner,
     } as Partial<TestMessage>)
@@ -143,8 +143,8 @@ describe('BaseConversationService', () => {
     })
 
     it('should trigger AI processing in sync mode', async () => {
-      const aiResponseContent = 'AI response'
-      const generateResponseSpy = jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseContent)
+      const aiResponseData = { message: { content: 'AI response' } }
+      const generateResponseSpy = jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseData)
       await service.createResponse(await service.createConversation(mockUser, 'test prompt'), 'test prompt')
       expect(generateResponseSpy).toHaveBeenCalled()
     })
@@ -193,14 +193,14 @@ describe('BaseConversationService', () => {
     })
 
     it('should create assistant message and update lastMessageAt', async () => {
-      const content = 'AI response'
-      jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(content)
+      const aiResponseData = { message: { content: 'AI response' } }
+      jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseData)
       const originalLastMessageAt = conversation.lastMessageAt.getTime()
 
       const message = await service.createResponse(conversation, 'test prompt')
       expect(message).toBeDefined()
       expect(message.role).toBe('assistant')
-      expect(message.content).toBe(content)
+      expect(message.content).toBe(aiResponseData.message.content)
       expect(String(message.conversation)).toBe(String(conversation._id))
       expect(String(message.owner)).toBe(String(conversation.owner))
 
@@ -240,14 +240,14 @@ describe('BaseConversationService', () => {
     })
 
     it('should create AI response', async () => {
-      const aiResponseContent = 'AI response'
-      jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseContent)
+      const aiResponseData = { message: { content: 'AI response' } }
+      jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseData)
 
       const response = await service.createResponse(conversation, 'test prompt')
 
       expect(response).toBeDefined()
       expect(response.role).toBe('assistant')
-      expect(response.content).toBe(aiResponseContent)
+      expect(response.content).toBe(aiResponseData.message.content)
       expect(String(response.conversation)).toBe(String(conversation._id))
       expect(String(response.owner)).toBe(String(conversation.owner))
     })

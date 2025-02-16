@@ -3,10 +3,10 @@ export enum ConversationVisibility {
   Public = 'public',
 }
 
-export interface BaseMessage {
+export interface BaseMessage<T = string> {
   id: string
   role: 'user' | 'assistant' | 'system'
-  content: string
+  content: T
   conversation: string
 }
 

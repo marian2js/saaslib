@@ -19,7 +19,10 @@ export abstract class BaseConversationService<
     super(model)
   }
 
-  abstract generateResponse(conversation: T, prompt: string): Promise<TMessage['content']>
+  abstract generateResponse(
+    conversation: T,
+    prompt: string,
+  ): Promise<{ message: Partial<TMessage>; conversation?: Partial<T> }>
 
   /**
    * Process a prompt and return a stream of response chunks
@@ -29,14 +32,20 @@ export abstract class BaseConversationService<
   abstract streamResponse(conversation: T, prompt: string): AsyncIterable<string>
 
   async createResponse(conversation: T, prompt: string): Promise<TMessage> {
-    const content = await this.generateResponse(conversation, prompt)
+    const { message, conversation: conversationData } = await this.generateResponse(conversation, prompt)
     const data = {
+      ...message,
       role: 'assistant',
-      content,
       conversation: conversation._id,
       owner: conversation.owner,
     } as TMessage
-    return await this.messageService.create(data as TMessage)
+    if (conversationData) {
+      await this.updateById(data.conversation, {
+        ...conversationData,
+        lastMessageAt: new Date(),
+      })
+    }
+    return await this.messageService.create(data)
   }
 
   async createMessage(data: Partial<TMessage>): Promise<TMessage> {
