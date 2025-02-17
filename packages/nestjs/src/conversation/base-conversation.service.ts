@@ -21,7 +21,8 @@ export abstract class BaseConversationService<
 
   abstract generateResponse(
     conversation: T,
-    prompt: string,
+    message: TMessage,
+    newConversation: boolean,
   ): Promise<{ message: Partial<TMessage>; conversation?: Partial<T> }>
 
   /**
@@ -31,10 +32,14 @@ export abstract class BaseConversationService<
    */
   abstract streamResponse(conversation: T, prompt: string): AsyncIterable<string>
 
-  async createResponse(conversation: T, prompt: string): Promise<TMessage> {
-    const { message, conversation: conversationData } = await this.generateResponse(conversation, prompt)
+  async createResponse(conversation: T, message: TMessage, newConversation: boolean): Promise<TMessage> {
+    const { message: assistantResponse, conversation: conversationData } = await this.generateResponse(
+      conversation,
+      message,
+      newConversation,
+    )
     const data = {
-      ...message,
+      ...assistantResponse,
       role: 'assistant',
       conversation: conversation._id,
       owner: conversation.owner,

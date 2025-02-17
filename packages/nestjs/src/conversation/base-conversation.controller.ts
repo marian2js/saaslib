@@ -85,7 +85,7 @@ export abstract class BaseConversationController<
 
     // Create the conversation and initial message
     const conversation = await this.conversationService.findById(conversationId)
-    await this.messageService.create({
+    const message = await this.messageService.create({
       role: 'user',
       content: entity.prompt,
       conversation: conversation._id,
@@ -108,7 +108,7 @@ export abstract class BaseConversationController<
 
       res.end()
     } else {
-      const assistantMessagePromise = this.conversationService.createResponse(conversation, entity.prompt)
+      const assistantMessagePromise = this.conversationService.createResponse(conversation, message, true)
       if (!async) {
         // the message is created and returned fetched by getApiObject
         await assistantMessagePromise
@@ -153,7 +153,7 @@ export abstract class BaseConversationController<
       owner: user._id,
     } as Partial<TMessage>)
 
-    const assistantPromise = this.conversationService.createResponse(conversation, body.content)
+    const assistantPromise = this.conversationService.createResponse(conversation, message, false)
 
     const data = {
       messages: [
