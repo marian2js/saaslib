@@ -94,6 +94,9 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
   @UseGuards(UserGuard)
   @Post()
   async create(@Req() req: Request, @Body() entity: T) {
+    if (!this.options.dtos.create) {
+      throw new NotFoundException()
+    }
     const entityDto = plainToClass(this.options.dtos.create, entity)
     const errors = await validate(entityDto)
     if (errors.length) {
@@ -135,6 +138,9 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
   @UseGuards(UserGuard)
   @Patch('/:id')
   async update(@Req() req: Request, @Param('id') id: string, @Body() update: Partial<T>) {
+    if (!this.options.dtos.update) {
+      throw new NotFoundException()
+    }
     const updateDto = plainToClass(this.options.dtos.update, update)
     const errors = await validate(updateDto)
     if (errors.length) {
