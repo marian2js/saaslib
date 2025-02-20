@@ -72,18 +72,18 @@ export function useSendConversationMessage<TMessage extends BaseMessage>() {
   return { sendMessage, loading, error }
 }
 
-export function useUpdateConversation() {
-  return useUpdateOwnableItem('conversations')
+export function useUpdateConversation<T extends BaseConversation<any> = BaseConversation<any>>() {
+  return useUpdateOwnableItem<Partial<T>>('conversations')
 }
 
-export function useDeleteConversation() {
-  return useDeleteOwnableItem('conversations')
+export function useDeleteConversation<T extends BaseConversation<any> = BaseConversation<any>>() {
+  return useDeleteOwnableItem<Partial<T>>('conversations')
 }
 
-export function useUpdateMessage() {
-  return useUpdateOwnableItem('messages')
+export function useUpdateMessage<T extends BaseMessage<any> = BaseMessage<any>>() {
+  return useUpdateOwnableItem<Partial<T>>('messages')
 }
 
-export function useDeleteMessage() {
-  return useDeleteOwnableItem('messages')
+export function useDeleteMessage<T extends BaseMessage<any> = BaseMessage<any>>() {
+  return useDeleteOwnableItem<Partial<T>>('messages')
 }

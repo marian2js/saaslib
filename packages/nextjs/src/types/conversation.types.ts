@@ -8,6 +8,7 @@ export interface BaseMessage<T = string> {
   role: 'user' | 'assistant' | 'system'
   content: T
   conversation: string
+  feedback?: 1 | 0 | -1
 }
 
 export interface BaseConversation<TMessage extends BaseMessage = BaseMessage> {

@@ -29,17 +29,19 @@ export abstract class BaseMessageService<
     return message.owner.toString() === user?._id?.toString()
   }
 
-  async getApiObject(message: TMessage, _owner: U): Promise<Record<string, unknown>> {
+  async getApiObject(message: TMessage, user: U): Promise<Record<string, unknown>> {
+    const isOwner = message.owner.toString() === user?._id?.toString()
     return {
       id: message._id,
       role: message.role,
       content: message.content,
       conversation: message.conversation,
       createdAt: message._id.getTimestamp(),
+      ...(isOwner && { feedback: message.feedback }),
     }
   }
 
-  async getApiObjectForList(message: TMessage, _owner: U): Promise<Record<string, unknown>> {
-    return this.getApiObject(message, _owner)
+  async getApiObjectForList(message: TMessage, user: U): Promise<Record<string, unknown>> {
+    return this.getApiObject(message, user)
   }
 }
