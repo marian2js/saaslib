@@ -3,7 +3,7 @@ import { UpdateQuery } from 'mongoose'
 import { BadRequestError } from 'passport-headerapikey'
 import { SaaslibOptions } from 'src/types'
 import Stripe from 'stripe'
-import { BaseUser } from '../../user'
+import { BaseUser, BaseUserService } from '../../user'
 import { UserSubscription } from '../models/user-subscription.model'
 
 @Injectable()
@@ -11,7 +11,10 @@ export class BaseSubscriptionService<U extends BaseUser> {
   private readonly logger = new Logger(BaseSubscriptionService.name)
   protected readonly stripe: Stripe
 
-  constructor(@Inject('SL_OPTIONS') protected options: SaaslibOptions) {
+  constructor(
+    @Inject('SL_OPTIONS') protected options: SaaslibOptions,
+    protected userService: BaseUserService<U>,
+  ) {
     const secretKey = process.env.STRIPE_SECRET_KEY
     if (secretKey) {
       this.stripe = new Stripe(secretKey, { apiVersion: '2024-11-20.acacia' })
@@ -192,7 +195,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
         'checkout.session.completed',
         // 'customer.subscription.created',
         'customer.subscription.updated',
-        // 'customer.subscription.deleted',
+        'customer.subscription.deleted',
         // 'customer.subscription.trial_will_end',
       ],
     })
@@ -200,6 +203,24 @@ export class BaseSubscriptionService<U extends BaseUser> {
     this.logger.debug('Webhook ID:', webhookEndpoint.id)
     this.logger.debug('Webhook Secret:', webhookEndpoint.secret)
     return webhookEndpoint
+  }
+
+  async cleanUpCancelledSubscriptions(type: string) {
+    const users = await this.userService.findMany({
+      [`subscriptions.${type}.cancelled`]: true,
+      [`subscriptions.${type}.periodEnd`]: { $lt: new Date() },
+    } as any)
+    this.logger.log(`Cleaning up ${users.length} cancelled subscriptions for ${type}...`)
+    for (const user of users) {
+      await this.userService.updateOne(
+        { _id: user._id },
+        {
+          $unset: {
+            [`subscriptions.${type}`]: 1,
+          } as any,
+        },
+      )
+    }
   }
 
   /**
