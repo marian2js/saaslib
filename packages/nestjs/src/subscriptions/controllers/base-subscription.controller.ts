@@ -198,6 +198,9 @@ export class BaseSubscriptionController<U extends BaseUser> {
       case 'customer.subscription.updated':
         await this.onCustomerSubscriptionUpdated(event)
         break
+      case 'customer.subscription.deleted':
+        await this.onCustomerSubscriptionDeleted(event)
+        break
     }
     return {}
   }
@@ -206,16 +209,18 @@ export class BaseSubscriptionController<U extends BaseUser> {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.client_reference_id
     if (!userId) {
-      this.logger.error(`Missing user id in checkout session ${session.id}`)
+      this.logger.error(`onCheckoutSessionCompleted: Missing user id in checkout session ${session.id}`)
       throw new Error('Missing user id')
     }
     const user = await this.baseUserService.findOne({ _id: userId })
     if (!user) {
-      this.logger.error(`User ${userId} not found when completing checkout session ${session.id}`)
+      this.logger.error(
+        `onCheckoutSessionCompleted: User ${userId} not found when completing checkout session ${session.id}`,
+      )
       throw new Error('User not found')
     }
     if (!session.subscription) {
-      this.logger.error(`Missing subscription id in checkout session ${session.id}`)
+      this.logger.error(`onCheckoutSessionCompleted: Missing subscription id in checkout session ${session.id}`)
       throw new Error('Missing subscription id')
     }
     const subscription = await this.baseSubscriptionService.getSubscription(session.subscription.toString())
@@ -250,7 +255,7 @@ export class BaseSubscriptionController<U extends BaseUser> {
     const subscription = event.data.object
     const user = await this.baseUserService.findOne({ stripeCustomerId: subscription.customer })
     if (!user) {
-      this.logger.error(`User not found for customer ${subscription.customer}`)
+      this.logger.error(`onCustomerSubscriptionUpdated: User not found for customer ${subscription.customer}`)
       throw new Error('User not found')
     }
 
@@ -302,6 +307,27 @@ export class BaseSubscriptionController<U extends BaseUser> {
 
     if (!isEmptyObj(update)) {
       await this.baseUserService.updateOne({ _id: user._id }, update)
+    }
+  }
+
+  protected async onCustomerSubscriptionDeleted(event: Stripe.CustomerSubscriptionDeletedEvent) {
+    const subscription = event.data.object
+    const user = await this.baseUserService.findOne({ stripeCustomerId: subscription.customer })
+    if (!user) {
+      this.logger.error(`onCustomerSubscriptionDeleted: User not found for customer ${subscription.customer}`)
+      throw new Error('User not found')
+    }
+
+    this.logger.log(`Subscription ${subscription.id} for user ${user._id} was deleted`)
+    const productId = subscription.items.data[0].price.product
+    const type = this.baseSubscriptionService.getSubscriptionType(productId.toString())
+    const userSubscription = user.subscriptions.get(type)
+
+    if (userSubscription.stripeSubscriptionId === subscription.id) {
+      await this.baseUserService.updateOne({ _id: user._id }, {
+        $unset: { [`subscriptions.${type}`]: 1 },
+      } as UpdateQuery<U>)
+      this.logger.log(`Subscription ${subscription.id} for user ${user._id} was deleted`)
     }
   }
 }
