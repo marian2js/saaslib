@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common'
-import { Model } from 'mongoose'
+import { Model, Types } from 'mongoose'
+import { RateLimitExceededException } from '../exceptions/rate-limit-exceed.exception'
 import { OwneableEntityService } from '../owneable'
 import { BaseUser } from '../user'
 import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
+import { MessageLogService } from './message-log.service'
+
+export interface ConversationRateLimit {
+  limit: number
+  ttl?: number // milliseconds
+}
 
 @Injectable()
 export abstract class BaseConversationService<
@@ -15,6 +22,7 @@ export abstract class BaseConversationService<
   constructor(
     model: Model<T>,
     protected readonly messageService: BaseMessageService<TMessage, U>,
+    protected readonly messageLogService: MessageLogService,
   ) {
     super(model)
   }
@@ -25,6 +33,10 @@ export abstract class BaseConversationService<
     message: TMessage,
     newConversation: boolean,
   ): Promise<{ message: Partial<TMessage>; conversation?: Partial<T> }>
+
+  getRateLimit(_user: U): ConversationRateLimit | ConversationRateLimit[] {
+    return { limit: Infinity }
+  }
 
   /**
    * Process a prompt and return a stream of response chunks
@@ -124,5 +136,68 @@ export abstract class BaseConversationService<
     } as TMessage)
 
     return conversation
+  }
+
+  async verifyRateLimit(user: U): Promise<void> {
+    const rateLimits = this.getRateLimit(user)
+    const limits = Array.isArray(rateLimits) ? rateLimits : [rateLimits]
+
+    // If any limit is 0, throw immediately
+    if (limits.some((limit) => limit.limit === 0)) {
+      throw new RateLimitExceededException(new Date(Date.now()))
+    }
+
+    // If all limits are Infinity, return early
+    if (limits.every((limit) => limit.limit === Infinity)) {
+      await this.messageLogService.createMessageLog(user)
+      return
+    }
+
+    // Check each rate limit
+    for (const rateLimit of limits) {
+      if (rateLimit.limit === Infinity) {
+        continue
+      }
+
+      // If ttl is not set, skip this limit
+      if (!rateLimit.ttl) {
+        continue
+      }
+
+      // Get the timestamp from ttl milliseconds ago
+      const timestampFromId = Types.ObjectId.createFromTime(Math.floor((Date.now() - rateLimit.ttl) / 1000))
+
+      // Count message logs since that timestamp
+      const count = await this.messageLogService.count({
+        owner: user._id,
+        _id: { $gt: timestampFromId },
+      })
+
+      if (count >= rateLimit.limit) {
+        // Get the oldest message in the window
+        // Find the oldest message in the window using findMany with limit 1
+        const [oldestMessage] = await this.messageLogService.findMany(
+          {
+            owner: user._id,
+            _id: { $gt: timestampFromId },
+          },
+          { sort: { _id: 1 }, limit: 1 },
+        )
+
+        if (!oldestMessage) {
+          // This shouldn't happen since we just found count > 0, but just in case
+          throw new RateLimitExceededException(new Date(Date.now()))
+        }
+
+        // Calculate when the next message will be available
+        const oldestMessageDate = oldestMessage._id.getTimestamp()
+        const nextAvailableDate = new Date(oldestMessageDate.getTime() + rateLimit.ttl)
+
+        throw new RateLimitExceededException(nextAvailableDate)
+      }
+    }
+
+    // Create message log entry after all checks pass
+    await this.messageLogService.createMessageLog(user)
   }
 }

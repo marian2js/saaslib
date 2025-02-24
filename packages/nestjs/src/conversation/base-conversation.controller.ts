@@ -20,7 +20,6 @@ import { BaseConversation } from './base-conversation.model'
 import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
-import { MessageLogService } from './message-log.service'
 
 type ConversationWithPrompt = {
   prompt: string
@@ -36,7 +35,6 @@ export abstract class BaseConversationController<
     protected conversationService: BaseConversationService<TMessage, T, U>,
     protected messageService: BaseMessageService<TMessage, U>,
     protected userService: BaseUserService<U>,
-    protected messageLogService: MessageLogService,
   ) {
     super(conversationService, userService)
   }
@@ -88,8 +86,8 @@ export abstract class BaseConversationController<
     // Create the conversation and initial message
     const conversation = await this.conversationService.findById(conversationId)
 
-    // Create message log entry
-    await this.messageLogService.createMessageLog(user)
+    // Verify rate limit
+    await this.conversationService.verifyRateLimit(user)
 
     const message = await this.messageService.create({
       role: 'user',
@@ -151,8 +149,8 @@ export abstract class BaseConversationController<
       throw new ForbiddenException()
     }
 
-    // Create message log entry
-    await this.messageLogService.createMessageLog(user)
+    // Verify rate limit
+    await this.conversationService.verifyRateLimit(user)
 
     // Create the message
     const message = await this.conversationService.createMessage({

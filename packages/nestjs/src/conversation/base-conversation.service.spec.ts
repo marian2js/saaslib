@@ -8,6 +8,7 @@ import { BaseConversation, BaseConversationVisibility } from './base-conversatio
 import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
+import { MessageLogService } from './message-log.service'
 
 @Injectable()
 @Schema()
@@ -55,8 +56,9 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
   constructor(
     @InjectModel('TestConversation') conversationModel: Model<TestConversation>,
     messageService: TestMessageService,
+    messageLogService: MessageLogService,
   ) {
-    super(conversationModel, messageService)
+    super(conversationModel, messageService, messageLogService)
     ;(messageService as any).conversationService = this
   }
 
@@ -91,6 +93,17 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
   }
 }
 
+@Injectable()
+class MockMessageLogService {
+  async count() {
+    return 0
+  }
+
+  async create() {
+    return {}
+  }
+}
+
 describe('BaseConversationService', () => {
   let app: INestApplication
   let service: TestConversationService
@@ -107,7 +120,11 @@ describe('BaseConversationService', () => {
           { name: TestMessage.name, schema: SchemaFactory.createForClass(TestMessage) },
         ]),
       ],
-      providers: [TestMessageService, TestConversationService],
+      providers: [
+        TestMessageService,
+        TestConversationService,
+        { provide: MessageLogService, useClass: MockMessageLogService },
+      ],
     }).compile()
 
     app = module.createNestApplication()
