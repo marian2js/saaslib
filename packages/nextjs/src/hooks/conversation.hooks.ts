@@ -2,16 +2,19 @@
 
 import { useCallback } from 'react'
 import { BaseConversation, BaseMessage, ConversationVisibility } from '../types/conversation.types'
-import { useApiCallback, useApiFetch } from './fetch.hooks'
+import { FetchHookOptions, useApiCallback, useApiFetch } from './fetch.hooks'
 import { useDeleteOwnableItem, useUpdateOwnableItem } from './owneable.hooks'
 
-interface FetchConversationsOptions {
+interface FetchConversationsParams {
   orderBy?: string
   page?: number
   limit?: number
 }
 
-export function useFetchConversations<T extends BaseConversation>(options: FetchConversationsOptions = {}) {
+export function useFetchConversations<T extends BaseConversation = BaseConversation>(
+  options: FetchConversationsParams = {},
+  fetchOptions?: FetchHookOptions<{ items: T[] }>,
+) {
   const defaultOptions = { orderBy: 'createdAt:-1' }
   const urlOptions = { ...defaultOptions, ...options }
 
@@ -26,11 +29,14 @@ export function useFetchConversations<T extends BaseConversation>(options: Fetch
     params.set('limit', urlOptions.limit.toString())
   }
   const queryString = params.toString()
-  return useApiFetch<{ items: T[] }>(`/conversations${queryString ? `?${queryString}` : ''}`)
+  return useApiFetch<{ items: T[] }>(`/conversations${queryString ? `?${queryString}` : ''}`, fetchOptions)
 }
 
-export function useFetchConversation<T extends BaseConversation>(conversationId: string) {
-  return useApiFetch<{ item: T }>(`/conversations/${conversationId}`)
+export function useFetchConversation<T extends BaseConversation>(
+  conversationId: string,
+  fetchOptions?: FetchHookOptions<{ item: T }>,
+) {
+  return useApiFetch<{ item: T }>(`/conversations/${conversationId}`, fetchOptions)
 }
 
 export function useCreateConversation<T extends BaseConversation>() {
