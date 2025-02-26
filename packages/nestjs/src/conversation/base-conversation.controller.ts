@@ -172,6 +172,57 @@ export abstract class BaseConversationController<
     return data
   }
 
+  @UseGuards(UserGuard)
+  @Post('/messages/:messageId/retry')
+  async retrySpecificMessage(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('messageId') messageId: string,
+    @Query('stream') stream?: boolean,
+    @Query('async') async?: boolean,
+  ) {
+    const userId = (req.user as { id: string }).id
+    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+
+    const userMessage = await this.messageService.findOne({
+      _id: new Types.ObjectId(messageId),
+      role: 'user',
+    })
+    if (!userMessage) {
+      throw new NotFoundException('User message not found')
+    }
+    const conversation = await this.conversationService.findOne({
+      _id: userMessage.conversation,
+    })
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found')
+    }
+    if (!this.conversationService.canEdit(conversation, user)) {
+      throw new ForbiddenException()
+    }
+
+    // Verify rate limit
+    await this.conversationService.verifyRateLimit(user)
+
+    // Delete ALL messages that were created after the specified user message
+    await this.messageService.deleteMany({
+      conversation: conversation._id,
+      _id: { $gt: userMessage._id },
+    })
+
+    // Create a new assistant response based on the user message
+    const assistantPromise = this.conversationService.createResponse(user, conversation, userMessage, false)
+
+    const data = {
+      messages: [
+        await this.messageService.getApiObjectForList(userMessage, user),
+        ...(!async ? [await this.messageService.getApiObjectForList(await assistantPromise, user)] : []),
+      ],
+    }
+    res.json(data)
+    return data
+  }
+
   async afterDelete(_userId: string, _id: string): Promise<void> {
     // Delete all messages belonging to this conversation
     await this.messageService.deleteMany({ conversation: _id })

@@ -93,3 +93,20 @@ export function useUpdateMessage<T extends BaseMessage<any> = BaseMessage<any>>(
 export function useDeleteMessage<T extends BaseMessage<any> = BaseMessage<any>>() {
   return useDeleteOwnableItem<Partial<T>>('messages')
 }
+
+export function useRetryMessage<TMessage extends BaseMessage>() {
+  const { callback, loading, error } = useApiCallback<{ messages: TMessage[] }>()
+
+  const retryMessage = useCallback(
+    async (messageId: string, async?: boolean) => {
+      const queryParams = async ? '?async=true' : ''
+      const result = await callback(`/conversations/messages/${messageId}/retry${queryParams}`, {
+        method: 'POST',
+      })
+      return result
+    },
+    [callback],
+  )
+
+  return { retryMessage, loading, error }
+}
