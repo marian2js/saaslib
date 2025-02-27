@@ -1,5 +1,4 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator'
-import { BaseConversationVisibility } from './base-conversation.model'
 
 export class BaseMessageDto {
   @IsEnum(['user', 'assistant', 'system'])
@@ -12,18 +11,10 @@ export class BaseMessageDto {
 export class BaseCreateConversationDto {
   @IsString()
   prompt: string
-
-  @IsOptional()
-  @IsEnum(BaseConversationVisibility)
-  visibility?: BaseConversationVisibility
 }
 
 export class BaseUpdateConversationDto {
   @IsOptional()
   @IsString()
   title?: string
-
-  @IsOptional()
-  @IsEnum(BaseConversationVisibility)
-  visibility?: BaseConversationVisibility
 }

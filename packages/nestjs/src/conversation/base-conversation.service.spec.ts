@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Document, FilterQuery, Model, Schema as MongooseSchema, QueryOptions, Types } from 'mongoose'
 import { testModuleImports } from '../tests/test.helpers'
 import { BaseUser } from '../user'
-import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
+import { BaseConversation } from './base-conversation.model'
 import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
@@ -25,11 +25,6 @@ class TestConversation extends BaseConversation {
     owner: { type: Types.ObjectId, required: true },
     title: { type: String },
     lastMessageAt: { type: Date, required: true, default: Date.now },
-    visibility: {
-      type: String,
-      enum: Object.values(BaseConversationVisibility),
-      default: BaseConversationVisibility.Private,
-    },
   })
 }
 
@@ -62,7 +57,12 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
     ;(messageService as any).conversationService = this
   }
 
-  override async generateResponse(_user: BaseUser, _conversation: TestConversation, _message: TestMessage) {
+  override async generateResponse(
+    _user: BaseUser,
+    _conversation: TestConversation,
+    _message: TestMessage,
+    _newConversation: boolean,
+  ) {
     return { message: { content: 'AI response' } }
   }
 
@@ -78,8 +78,9 @@ class TestConversationService extends BaseConversationService<TestMessage, TestC
     user: BaseUser,
     conversation: TestConversation,
     message: TestMessage,
+    newConversation: boolean,
   ): Promise<TestMessage> {
-    const { message: assistantResponse } = await this.generateResponse(user, conversation, message)
+    const { message: assistantResponse } = await this.generateResponse(user, conversation, message, newConversation)
     return await this.createMessage({
       ...assistantResponse,
       role: 'assistant',
@@ -109,7 +110,7 @@ describe('BaseConversationService', () => {
   let service: TestConversationService
   let messageService: TestMessageService
   let mockUser: BaseUser
-  let otherUser: BaseUser
+  let _otherUser: BaseUser
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -133,7 +134,7 @@ describe('BaseConversationService', () => {
     service = module.get<TestConversationService>(TestConversationService)
     messageService = module.get<TestMessageService>(TestMessageService)
     mockUser = { _id: new Types.ObjectId() } as BaseUser
-    otherUser = { _id: new Types.ObjectId() } as BaseUser
+    _otherUser = { _id: new Types.ObjectId() } as BaseUser
   })
 
   afterEach(async () => {
@@ -145,7 +146,6 @@ describe('BaseConversationService', () => {
       const result = await service.createConversation(mockUser, 'test prompt')
       expect(result).toBeDefined()
       expect(String(result.owner)).toBe(String(mockUser._id))
-      expect(result.visibility).toBe(BaseConversationVisibility.Private)
 
       const messages = await messageService.findMany({ conversation: result._id })
       expect(messages).toHaveLength(1)
@@ -153,11 +153,11 @@ describe('BaseConversationService', () => {
       expect(messages[0].content).toBe('test prompt')
     })
 
-    it('should create conversation with custom visibility', async () => {
-      const result = await service.createConversation(mockUser, 'test prompt', BaseConversationVisibility.Public)
+    it('should create conversation with expected fields', async () => {
+      const result = await service.createConversation(mockUser, 'test prompt')
       expect(result).toBeDefined()
       expect(String(result.owner)).toBe(String(mockUser._id))
-      expect(result.visibility).toBe(BaseConversationVisibility.Public)
+      expect(result.lastMessageAt).toBeDefined()
 
       const messages = await messageService.findMany({ conversation: result._id })
       expect(messages).toHaveLength(1)
@@ -166,41 +166,16 @@ describe('BaseConversationService', () => {
     it('should trigger AI processing in sync mode', async () => {
       const aiResponseData = { message: { content: 'AI response' } }
       const generateResponseSpy = jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseData)
-      await service.createResponse(mockUser, await service.createConversation(mockUser, 'test prompt'), {
-        content: 'test prompt',
-      } as any)
+      const conversation = await service.createConversation(mockUser, 'test prompt')
+      await service.createResponse(
+        mockUser,
+        conversation,
+        {
+          content: 'test prompt',
+        } as any,
+        true,
+      )
       expect(generateResponseSpy).toHaveBeenCalled()
-    })
-  })
-
-  describe('visibility', () => {
-    let conversation: TestConversation
-
-    beforeEach(async () => {
-      const created = await service.create({
-        owner: mockUser._id,
-        visibility: BaseConversationVisibility.Private,
-        lastMessageAt: new Date(),
-      } as TestConversation)
-      conversation = created
-    })
-
-    it('should allow owner to view private conversation', () => {
-      expect(service.canView(conversation, mockUser)).toBe(true)
-    })
-
-    it('should allow anyone to view public conversation', async () => {
-      await service.updateById(conversation._id, {
-        visibility: BaseConversationVisibility.Public,
-      } as Partial<TestConversation>)
-
-      const publicConversation = await service.findById(conversation._id)
-      expect(publicConversation).toBeDefined()
-      expect(service.canView(publicConversation, otherUser)).toBe(true)
-    })
-
-    it('should not allow others to view private conversation', () => {
-      expect(service.canView(conversation, otherUser)).toBe(false)
     })
   })
 
@@ -210,7 +185,6 @@ describe('BaseConversationService', () => {
     beforeEach(async () => {
       conversation = await service.create({
         owner: mockUser._id,
-        visibility: BaseConversationVisibility.Private,
         lastMessageAt: new Date(),
       } as TestConversation)
     })
@@ -220,7 +194,7 @@ describe('BaseConversationService', () => {
       jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseData)
       const originalLastMessageAt = conversation.lastMessageAt.getTime()
 
-      const message = await service.createResponse(mockUser, conversation, { content: 'test prompt' } as any)
+      const message = await service.createResponse(mockUser, conversation, { content: 'test prompt' } as any, false)
       expect(message).toBeDefined()
       expect(message.role).toBe('assistant')
       expect(message.content).toBe(aiResponseData.message.content)
@@ -238,7 +212,6 @@ describe('BaseConversationService', () => {
     beforeEach(async () => {
       conversation = await service.create({
         owner: mockUser._id,
-        visibility: BaseConversationVisibility.Private,
         lastMessageAt: new Date(),
       } as TestConversation)
     })
@@ -266,7 +239,7 @@ describe('BaseConversationService', () => {
       const aiResponseData = { message: { content: 'AI response' } }
       jest.spyOn(service, 'generateResponse').mockResolvedValueOnce(aiResponseData)
 
-      const response = await service.createResponse(mockUser, conversation, { content: 'test prompt' } as any)
+      const response = await service.createResponse(mockUser, conversation, { content: 'test prompt' } as any, false)
 
       expect(response).toBeDefined()
       expect(response.role).toBe('assistant')

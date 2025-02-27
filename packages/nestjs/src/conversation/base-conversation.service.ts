@@ -3,7 +3,7 @@ import { Model, Types } from 'mongoose'
 import { RateLimitExceededException } from '../exceptions/rate-limit-exceed.exception'
 import { OwneableEntityService } from '../owneable'
 import { BaseUser } from '../user'
-import { BaseConversation, BaseConversationVisibility } from './base-conversation.model'
+import { BaseConversation } from './base-conversation.model'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
 import { MessageLogService } from './message-log.service'
@@ -78,10 +78,7 @@ export abstract class BaseConversationService<
   }
 
   canView(conversation: T, user?: U): boolean {
-    return (
-      conversation.owner.toString() === user?._id?.toString() ||
-      conversation.visibility === BaseConversationVisibility.Public
-    )
+    return conversation.owner.toString() === user?._id?.toString()
   }
 
   async getApiObject(conversation: T, _owner: U): Promise<Record<string, unknown>> {
@@ -99,7 +96,6 @@ export abstract class BaseConversationService<
       title: conversation.title,
       messages: messageApiData.reverse(),
       lastMessageAt: conversation.lastMessageAt,
-      visibility: conversation.visibility,
     }
   }
 
@@ -108,22 +104,16 @@ export abstract class BaseConversationService<
       id: conversation._id,
       title: conversation.title,
       lastMessageAt: conversation.lastMessageAt,
-      visibility: conversation.visibility,
     }
   }
 
   /**
    * Creates a conversation with an initial user message
    */
-  async createConversation(
-    owner: U,
-    prompt: string,
-    visibility: BaseConversationVisibility = BaseConversationVisibility.Private,
-  ): Promise<T> {
+  async createConversation(owner: U, prompt: string): Promise<T> {
     // Create the conversation
     const conversation = await this.create({
       owner: owner._id,
-      visibility,
       lastMessageAt: new Date(),
     } as T)
 

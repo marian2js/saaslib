@@ -20,6 +20,7 @@ import { BaseConversation } from './base-conversation.model'
 import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
+import { BaseSharedConversationService } from './base-shared-conversation.service'
 
 type ConversationWithPrompt = {
   prompt: string
@@ -35,6 +36,7 @@ export abstract class BaseConversationController<
     protected conversationService: BaseConversationService<TMessage, T, U>,
     protected messageService: BaseMessageService<TMessage, U>,
     protected userService: BaseUserService<U>,
+    protected sharedConversationService?: BaseSharedConversationService,
   ) {
     super(conversationService, userService)
   }
@@ -221,6 +223,38 @@ export abstract class BaseConversationController<
     }
     res.json(data)
     return data
+  }
+
+  @UseGuards(UserGuard)
+  @Post('/:id/share')
+  async shareConversation(@Req() req: Request, @Param('id') id: string) {
+    const userId = (req.user as { id: string }).id
+    const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+
+    const conversation = await this.conversationService.findOne({
+      _id: new Types.ObjectId(id),
+    })
+    if (!conversation) {
+      throw new NotFoundException()
+    }
+    if (!this.conversationService.canEdit(conversation, user)) {
+      throw new ForbiddenException()
+    }
+
+    if (!this.sharedConversationService) {
+      throw new Error('SharedConversationService not provided')
+    }
+
+    const title = conversation.title || 'Shared Conversation'
+    const sharedConversation = await this.sharedConversationService.createSharedConversation(
+      conversation._id,
+      conversation.owner,
+      title,
+    )
+
+    return {
+      item: await this.sharedConversationService.getApiObject(sharedConversation, user),
+    }
   }
 
   async afterDelete(_userId: string, _id: string): Promise<void> {
