@@ -3,6 +3,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -222,6 +223,35 @@ export class StorageService {
       return items
     } catch (error) {
       this.logger.error(`Failed to list all items from bucket: ${error.message}`)
+      throw error
+    }
+  }
+
+  /**
+   * Get the last modified time of a file in the bucket
+   * @param bucketName The name of the bucket
+   * @param key The key (path) of the file in the bucket
+   * @returns The last modified date of the file, or null if the file doesn't exist
+   */
+  async getLastModified(bucketName: string, key: string): Promise<Date | null> {
+    const command = new HeadObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    })
+
+    try {
+      const response = await this.s3Client.send(command)
+      if (response.LastModified) {
+        this.logger.log(`Retrieved last modified time for ${bucketName}/${key}: ${response.LastModified}`)
+        return response.LastModified
+      }
+      return null
+    } catch (error) {
+      if (error.name === 'NotFound') {
+        this.logger.log(`File ${bucketName}/${key} not found`)
+        return null
+      }
+      this.logger.error(`Failed to get last modified time: ${error.message}`)
       throw error
     }
   }
