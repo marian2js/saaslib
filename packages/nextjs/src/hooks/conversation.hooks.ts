@@ -9,6 +9,7 @@ interface FetchConversationsParams {
   orderBy?: string
   page?: number
   limit?: number
+  admin?: boolean
 }
 
 export function useFetchConversations<T extends BaseConversation = BaseConversation>(
@@ -27,6 +28,9 @@ export function useFetchConversations<T extends BaseConversation = BaseConversat
   }
   if (urlOptions.limit !== undefined) {
     params.set('limit', urlOptions.limit.toString())
+  }
+  if (urlOptions.admin !== undefined) {
+    params.set('admin', urlOptions.admin.toString())
   }
   const queryString = params.toString()
   return useApiFetch<{ items: T[] }>(`/conversations${queryString ? `?${queryString}` : ''}`, fetchOptions)

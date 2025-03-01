@@ -2,8 +2,8 @@ import { INestApplication, Injectable } from '@nestjs/common'
 import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model, Types } from 'mongoose'
-import { BaseUser } from 'src/user'
 import { testModuleImports } from 'src/tests/test.helpers'
+import { BaseUser } from 'src/user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from './owneable-entity.service'
 
@@ -80,6 +80,27 @@ describe('BaseEntityService', () => {
 
       const results = await service.findManyByOwner(owner1)
       expect(results.every((result) => result.owner.equals(owner1))).toBe(true)
+    })
+
+    it('should exclude documents owned by the specified owner when exceptOwner is true', async () => {
+      const owner1 = new Types.ObjectId()
+      const owner2 = new Types.ObjectId()
+      const owner3 = new Types.ObjectId()
+
+      await service.create({ owner: owner1, key: 'key1', name: 'Entity One', category: 'Category1' })
+      await service.create({ owner: owner2, key: 'key2', name: 'Entity Two', category: 'Category2' })
+      await service.create({ owner: owner3, key: 'key3', name: 'Entity Three', category: 'Category3' })
+
+      const results = await service.findManyByOwner(owner1, {}, { exceptOwner: true })
+
+      // Should contain entities from owner2 and owner3, but not owner1
+      expect(results.length).toBeGreaterThan(0)
+      expect(results.every((result) => !result.owner.equals(owner1))).toBe(true)
+
+      // Verify we can find entities from other owners
+      const ownerIds = results.map((result) => result.owner.toString())
+      expect(ownerIds).toContain(owner2.toString())
+      expect(ownerIds).toContain(owner3.toString())
     })
   })
 

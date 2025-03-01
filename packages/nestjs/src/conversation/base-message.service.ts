@@ -17,18 +17,6 @@ export abstract class BaseMessageService<
     super(messageModel)
   }
 
-  canView(message: TMessage, user?: U): boolean {
-    return message.owner.toString() === user?._id?.toString()
-  }
-
-  canEdit(message: TMessage, user?: U): boolean {
-    return message.owner.toString() === user?._id?.toString()
-  }
-
-  canDelete(message: TMessage, user?: U): boolean {
-    return message.owner.toString() === user?._id?.toString()
-  }
-
   async getApiObject(message: TMessage, user: U): Promise<Record<string, unknown>> {
     const isOwner = message.owner.toString() === user?._id?.toString()
     return {

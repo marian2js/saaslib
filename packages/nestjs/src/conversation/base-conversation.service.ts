@@ -77,10 +77,6 @@ export abstract class BaseConversationService<
     return message
   }
 
-  canView(conversation: T, user?: U): boolean {
-    return conversation.owner.toString() === user?._id?.toString()
-  }
-
   async getApiObject(conversation: T, _owner: U): Promise<Record<string, unknown>> {
     const messages = await this.messageService.findMany(
       { conversation: conversation._id },

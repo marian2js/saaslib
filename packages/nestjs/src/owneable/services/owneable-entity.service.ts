@@ -1,6 +1,6 @@
 import { FilterQuery, QueryOptions, Types } from 'mongoose'
 import { BaseEntityService } from '../../base/base-entity.service'
-import { BaseUser } from '../../user/models/base-user.model'
+import { BaseUser, BaseUserRole } from '../../user/models/base-user.model'
 import { OwneableModel } from '../models/owneable.model'
 
 export abstract class OwneableEntityService<T extends OwneableModel, U extends BaseUser> extends BaseEntityService<T> {
@@ -31,8 +31,12 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
   }
 
   async findManyByOwner(ownerId: Types.ObjectId | string, filter?: FilterQuery<T>, options?: QueryOptions<T>) {
+    let ownerIdFilter: Types.ObjectId | string | Record<string, any> = ownerId
     if (typeof ownerId === 'string') {
-      ownerId = new Types.ObjectId(ownerId)
+      ownerIdFilter = new Types.ObjectId(ownerId)
+    }
+    if (options?.exceptOwner) {
+      ownerIdFilter = { $ne: ownerIdFilter }
     }
     if (options?.sort) {
       if (!this.validateSortKeys(options.sort)) {
@@ -48,7 +52,7 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
       }
       options.sort = mappedSort
     }
-    return this.findMany({ ...(filter ?? {}), owner: ownerId }, options)
+    return this.findMany({ ...(filter ?? {}), owner: ownerIdFilter }, options)
   }
 
   maxEntities(_owner: U) {
@@ -56,7 +60,8 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
   }
 
   canView(entity: T, owner: U | null) {
-    return owner && entity.owner.equals(owner._id)
+    if (!owner) return false
+    return entity.owner.equals(owner._id) || owner.role === BaseUserRole.Admin
   }
 
   canCreate(_entity: T, _owner: U) {
@@ -68,6 +73,6 @@ export abstract class OwneableEntityService<T extends OwneableModel, U extends B
   }
 
   canDelete(entity: T, owner: U) {
-    return entity.owner.equals(owner._id)
+    return entity.owner.equals(owner._id) || owner.role === BaseUserRole.Admin
   }
 }

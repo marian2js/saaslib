@@ -5,7 +5,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { IsOptional, IsString } from 'class-validator'
 import { Model, Types } from 'mongoose'
 import { testModuleImports } from 'src/tests/test.helpers'
-import { BaseUser } from 'src/user'
+import { BaseUser, BaseUserRole } from 'src/user'
 import { BaseUserService } from 'src/user/services/base-user.service'
 import * as request from 'supertest'
 import { OwneableModel } from '../models/owneable.model'
@@ -101,8 +101,11 @@ describe('OwneableEntityController', () => {
 
   afterEach(async () => await app.close())
 
-  async function createUserToken() {
-    const user = await userService.create({ email: 'test@example.com' })
+  async function createUserToken(isAdmin = false) {
+    const user = await userService.create({
+      email: isAdmin ? 'admin@example.com' : 'test@example.com',
+      role: isAdmin ? BaseUserRole.Admin : undefined,
+    })
     const accessToken = jwtService.sign(
       {
         id: user._id,
@@ -140,6 +143,35 @@ describe('OwneableEntityController', () => {
 
     it('should return 403 if no token is provided', async () => {
       await request(app.getHttpServer()).get('/fake').expect(403)
+    })
+
+    it('should return entities not belonging to admin when admin=true param is set and user is admin', async () => {
+      // Create admin user
+      const { user: adminUser, accessToken: adminAccessToken } = await createUserToken(true)
+
+      // Create entities owned by admin and another user
+      const otherUser = new Types.ObjectId()
+      await service.create({ owner: adminUser._id, name: 'Admin Entity' })
+      await service.create({ owner: otherUser, name: 'Other User Entity' })
+
+      // Test with admin=true query param
+      const res = await request(app.getHttpServer())
+        .get('/fake?admin=true')
+        .set('Authorization', `Bearer ${adminAccessToken}`)
+        .expect(200)
+
+      // Should only return entities not owned by the admin
+      expect(res.body.items.length).toBe(1)
+      expect(res.body.items[0].name).toBe('Other User Entity')
+    })
+
+    it('should return 403 when admin=true param is set but user is not admin', async () => {
+      const { accessToken } = await createUserToken() // Regular non-admin user
+
+      await request(app.getHttpServer())
+        .get('/fake?admin=true')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(403)
     })
   })
 

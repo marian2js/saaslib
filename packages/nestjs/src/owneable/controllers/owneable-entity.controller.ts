@@ -19,7 +19,7 @@ import { Request } from 'express'
 import { Types } from 'mongoose'
 import { isPromise } from 'util/types'
 import { LimitExceededException } from '../../exceptions/limit-exceeded.exception'
-import { BaseUser, BaseUserService, OptionalUserGuard, UserGuard } from '../../user'
+import { BaseUser, BaseUserRole, BaseUserService, OptionalUserGuard, UserGuard } from '../../user'
 import { OwneableModel } from '../models/owneable.model'
 import { OwneableEntityService } from '../services/owneable-entity.service'
 import { ListQueryDto } from '../types/list-query.dto'
@@ -39,9 +39,13 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
 
   @UseGuards(UserGuard)
   @Get()
-  async getMine(@Req() req: Request, @Query() query: ListQueryDto) {
+  async getMine(@Req() req: Request, @Query() query: ListQueryDto, @Query('admin') useAdmin?: boolean) {
     const userId = (req.user as { id: string }).id
     const user = await this.baseUserService.findOne({ _id: new Types.ObjectId(userId) })
+
+    if (useAdmin && user.role !== BaseUserRole.Admin) {
+      throw new ForbiddenException()
+    }
 
     const defaultPageSize = this.options.pageSize?.default ?? DEFAULT_PAGE_SIZE
     const maxPageSize = this.options.pageSize?.max ?? MAX_PAGE_SIZE
@@ -55,6 +59,7 @@ export abstract class OwneableEntityController<T extends OwneableModel, U extend
         limit,
         skip,
         sort: this.parseOrderBy(query.orderBy),
+        exceptOwner: !!useAdmin,
       },
     )
     const allowedDocs = docs.filter((doc) => this.owneableEntityService.canView(doc, user))
