@@ -1,7 +1,12 @@
 'use client'
 
 import { useCallback } from 'react'
-import { BaseConversation, BaseMessage, ConversationVisibility } from '../types/conversation.types'
+import {
+  BaseConversation,
+  BaseMessage,
+  BaseSharedConversation,
+  ConversationVisibility,
+} from '../types/conversation.types'
 import { FetchHookOptions, useApiCallback, useApiFetch } from './fetch.hooks'
 import { useDeleteOwnableItem, useUpdateOwnableItem } from './owneable.hooks'
 
@@ -113,4 +118,20 @@ export function useRetryMessage<TMessage extends BaseMessage>() {
   )
 
   return { retryMessage, loading, error }
+}
+
+export function useShareConversation<T extends BaseSharedConversation = BaseSharedConversation>() {
+  const { callback, loading, error } = useApiCallback<{ item: T }>()
+
+  const shareConversation = useCallback(
+    async (conversationId: string) => {
+      const result = await callback(`/conversations/${conversationId}/share`, {
+        method: 'POST',
+      })
+      return result
+    },
+    [callback],
+  )
+
+  return { shareConversation, loading, error }
 }

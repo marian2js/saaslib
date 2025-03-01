@@ -38,4 +38,8 @@ export abstract class BaseSharedConversationService<
       original: conversationId,
     } as T)
   }
+
+  canView(): boolean {
+    return true
+  }
 }

@@ -19,3 +19,9 @@ export interface BaseConversation<TMessage extends BaseMessage = BaseMessage> {
   lastMessageAt: Date
   visibility: ConversationVisibility
 }
+
+export interface BaseSharedConversation {
+  id: string
+  title: string
+  slug: string
+}
