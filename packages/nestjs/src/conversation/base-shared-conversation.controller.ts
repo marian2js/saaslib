@@ -4,6 +4,7 @@ import { Types } from 'mongoose'
 import { OwneableEntityController } from '../owneable'
 import { OwneableEntityOptions } from '../owneable/types/owneable.types'
 import { BaseUser, BaseUserService, OptionalUserGuard, UserGuard } from '../user'
+import { isObjectId } from '../utils/object.utils'
 import { BaseSharedConversation } from './base-shared-conversation.model'
 import { BaseSharedConversationService } from './base-shared-conversation.service'
 
@@ -28,9 +29,11 @@ export abstract class BaseSharedConversationController<
   }
 
   @UseGuards(OptionalUserGuard)
-  @Get('/:slug')
-  async getBySlug(@Req() req: Request, @Param('slug') slug: string) {
-    const doc = await this.sharedConversationService.findOne({ slug })
+  @Get('/:id')
+  async getOne(@Req() req: Request, @Param('id') id: string) {
+    // Check if id is an ObjectId or a slug
+    const query = isObjectId(id) ? { _id: new Types.ObjectId(id) } : { slug: id }
+    const doc = await this.sharedConversationService.findOne(query)
 
     if (!doc) {
       throw new NotFoundException()

@@ -1,6 +1,6 @@
 'use server'
 
-import { BaseConversation, BaseMessage } from '../types'
+import { BaseConversation, BaseMessage, BaseSharedConversation } from '../types'
 import { fetchWithAuth } from '../utils/fetch.utils'
 
 export async function fetchConversations<T>(): Promise<T[]> {
@@ -14,7 +14,13 @@ export async function fetchConversation<T extends BaseConversation>(conversation
   return res.item
 }
 
-export async function createConversation<T extends BaseConversation, TMessage extends BaseMessage>(
+export async function fetchSharedConversation<T extends BaseSharedConversation>(idOrSlug: string): Promise<T> {
+  const url = `/shared-conversations/${idOrSlug}`
+  const res = await fetchWithAuth<{ item: T }>(url)
+  return res.item
+}
+
+export async function createConversation<T extends BaseConversation>(
   prompt: string,
   visibility: string = 'private',
   async?: boolean,

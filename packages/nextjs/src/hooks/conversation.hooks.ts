@@ -8,7 +8,7 @@ import {
   ConversationVisibility,
 } from '../types/conversation.types'
 import { FetchHookOptions, useApiCallback, useApiFetch } from './fetch.hooks'
-import { useDeleteOwnableItem, useUpdateOwnableItem } from './owneable.hooks'
+import { useDeleteOwnableItem, useFetchOwnableItem, useUpdateOwnableItem } from './owneable.hooks'
 
 interface FetchConversationsParams {
   orderBy?: string
@@ -134,4 +134,10 @@ export function useShareConversation<T extends BaseSharedConversation = BaseShar
   )
 
   return { shareConversation, loading, error }
+}
+
+export function useFetchSharedConversation<T extends BaseSharedConversation = BaseSharedConversation>(
+  idOrSlug: string,
+) {
+  return useFetchOwnableItem<Partial<T>>('shared-conversations', idOrSlug)
 }

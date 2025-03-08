@@ -31,3 +31,11 @@ export function mergeDeep<T extends Record<string, any>>(target: T, source: Part
 
   return result as T
 }
+
+/**
+ * Checks if a string is a valid MongoDB ObjectId
+ * A valid ObjectId is a 24-character hex string
+ */
+export function isObjectId(id: string): boolean {
+  return /^[0-9a-fA-F]{24}$/.test(id)
+}
