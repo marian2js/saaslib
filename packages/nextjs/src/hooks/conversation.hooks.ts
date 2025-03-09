@@ -153,3 +153,19 @@ export function useUpdateSharedConversation<T extends BaseSharedConversation<any
 export function useDeleteSharedConversation<T extends BaseSharedConversation<any> = BaseSharedConversation>() {
   return useDeleteOwnableItem<Partial<T>>('shared-conversations')
 }
+
+export function useCreateConversationFromShared<T extends BaseConversation = BaseConversation>() {
+  const { callback, loading, error } = useApiCallback<{ item: T }>()
+
+  const createConversationFromShared = useCallback(
+    async (sharedConversationIdOrSlug: string) => {
+      const result = await callback(`/shared-conversations/${sharedConversationIdOrSlug}/conversation`, {
+        method: 'POST',
+      })
+      return result
+    },
+    [callback],
+  )
+
+  return { createConversationFromShared, loading, error }
+}

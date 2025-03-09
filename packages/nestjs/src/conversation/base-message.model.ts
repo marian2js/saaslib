@@ -11,7 +11,7 @@ export abstract class BaseMessage<T = string> extends OwneableModel {
   role: string
 
   @Prop({ type: Number, enum: [1, 0, -1] })
-  feedback: 1 | 0 | -1
+  feedback?: 1 | 0 | -1
 
   abstract content: T
 }

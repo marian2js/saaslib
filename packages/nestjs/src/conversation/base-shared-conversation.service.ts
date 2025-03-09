@@ -3,6 +3,8 @@ import { Model, Types } from 'mongoose'
 import { OwneableEntityService } from '../owneable'
 import { BaseUser } from '../user'
 import { generateSlug, StorageService } from '../utils'
+import { BaseConversation } from './base-conversation.model'
+import { BaseConversationService } from './base-conversation.service'
 import { BaseMessage } from './base-message.model'
 import { BaseMessageService } from './base-message.service'
 import { BaseSharedConversation } from './base-shared-conversation.model'
@@ -19,6 +21,7 @@ export abstract class BaseSharedConversationService<
     model: Model<T>,
     protected readonly messageService: BaseMessageService<BaseMessage<any>, U>,
     protected readonly storageService: StorageService,
+    protected readonly conversationService: BaseConversationService<BaseMessage<any>, BaseConversation, U>,
   ) {
     super(model)
   }
@@ -82,6 +85,31 @@ export abstract class BaseSharedConversationService<
     } as T)
   }
 
+  /**
+   * Creates a new conversation based on a shared conversation
+   * @param sharedConversation The shared conversation to create a conversation from
+   * @param userId The ID of the user who will own the new conversation
+   */
+  async createConversationFromShared(
+    sharedConversation: T,
+    userId: Types.ObjectId | string,
+  ): Promise<BaseConversation> {
+    const conversation = await this.conversationService.create({
+      owner: new Types.ObjectId(userId),
+      title: sharedConversation.title,
+      lastMessageAt: new Date(),
+    } as BaseConversation)
+
+    const storedMessages = await this.getStoredMessages(sharedConversation.slug)
+    for (const message of storedMessages) {
+      await this.messageService.create(
+        this.parseStoredMessageForNewConversation(message, conversation._id, new Types.ObjectId(userId)),
+      )
+    }
+
+    return conversation
+  }
+
   parseMessageForStorage(message: BaseMessage, index: number, slug: string): Record<string, unknown> {
     return {
       id: slug + ':' + index,
@@ -92,6 +120,19 @@ export abstract class BaseSharedConversationService<
 
   parseStoredMessageForApi(message: Record<string, unknown>) {
     return message
+  }
+
+  parseStoredMessageForNewConversation(
+    message: Record<string, any>,
+    conversationId: Types.ObjectId,
+    owner: Types.ObjectId,
+  ): BaseMessage<any> {
+    return {
+      role: message.role,
+      content: message.content,
+      conversation: conversationId,
+      owner,
+    }
   }
 
   canView(): boolean {
