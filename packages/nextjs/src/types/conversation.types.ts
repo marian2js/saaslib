@@ -26,7 +26,7 @@ export interface BaseConversation<TMessage extends BaseMessage = BaseMessage> {
   visibility: ConversationVisibility
 }
 
-export interface BaseSharedConversation<TMessage extends BaseSharedMessage = BaseSharedMessage> {
+export interface BaseSharedConversation<TMessage extends BaseSharedMessage<any> = BaseSharedMessage> {
   id: string
   title: string
   slug: string

@@ -8,7 +8,7 @@ import {
   ConversationVisibility,
 } from '../types/conversation.types'
 import { FetchHookOptions, useApiCallback, useApiFetch } from './fetch.hooks'
-import { useDeleteOwnableItem, useFetchOwnableItem, useUpdateOwnableItem } from './owneable.hooks'
+import { useDeleteOwnableItem, useFetchOwnableItem, useFetchOwnableItems, useUpdateOwnableItem } from './owneable.hooks'
 
 interface FetchConversationsParams {
   orderBy?: string
@@ -136,8 +136,20 @@ export function useShareConversation<T extends BaseSharedConversation = BaseShar
   return { shareConversation, loading, error }
 }
 
-export function useFetchSharedConversation<T extends BaseSharedConversation = BaseSharedConversation>(
+export function useFetchSharedConversation<T extends BaseSharedConversation<any> = BaseSharedConversation>(
   idOrSlug: string,
 ) {
-  return useFetchOwnableItem<Partial<T>>('shared-conversations', idOrSlug)
+  return useFetchOwnableItem<T>('shared-conversations', idOrSlug)
+}
+
+export function useFetchSharedConversations<T extends BaseSharedConversation<any> = BaseSharedConversation>() {
+  return useFetchOwnableItems<T>('shared-conversations')
+}
+
+export function useUpdateSharedConversation<T extends BaseSharedConversation<any> = BaseSharedConversation>() {
+  return useUpdateOwnableItem<Partial<T>>('shared-conversations')
+}
+
+export function useDeleteSharedConversation<T extends BaseSharedConversation<any> = BaseSharedConversation>() {
+  return useDeleteOwnableItem<Partial<T>>('shared-conversations')
 }

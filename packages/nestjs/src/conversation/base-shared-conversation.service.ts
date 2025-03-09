@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Model, Types } from 'mongoose'
 import { OwneableEntityService } from '../owneable'
 import { BaseUser } from '../user'
@@ -44,7 +44,14 @@ export abstract class BaseSharedConversationService<
   }
 
   async getApiObjectForList(sharedConversation: T, user: U): Promise<Record<string, unknown>> {
-    return this.getApiObject(sharedConversation, user)
+    if (user._id.toString() !== sharedConversation.owner.toString()) {
+      throw new UnauthorizedException()
+    }
+    return {
+      id: sharedConversation._id,
+      title: sharedConversation.title,
+      slug: sharedConversation.slug,
+    }
   }
 
   /**
