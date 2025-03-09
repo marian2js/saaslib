@@ -23,6 +23,12 @@ export abstract class BaseSharedConversationService<
     super(model)
   }
 
+  async getStoredMessages(slug: string): Promise<Record<string, any>[]> {
+    const filePath = `${this.filePrefix}/${slug}.json`
+    const messagesJson = await this.storageService.readTextFile(this.bucketName, filePath)
+    return JSON.parse(messagesJson)
+  }
+
   async getApiObject(sharedConversation: T, _user: U | null): Promise<Record<string, unknown>> {
     const baseObject = {
       id: sharedConversation._id,
@@ -30,10 +36,7 @@ export abstract class BaseSharedConversationService<
       slug: sharedConversation.slug,
     }
 
-    const filePath = `${this.filePrefix}/${sharedConversation.slug}.json`
-    const messagesJson = await this.storageService.readTextFile(this.bucketName, filePath)
-    const messages = JSON.parse(messagesJson)
-
+    const messages = await this.getStoredMessages(sharedConversation.slug)
     return {
       ...baseObject,
       messages,
@@ -58,10 +61,7 @@ export abstract class BaseSharedConversationService<
     }
 
     // Filter messages to only include role and content
-    const simplifiedMessages = messages.map((message) => ({
-      role: message.role,
-      content: message.content,
-    }))
+    const simplifiedMessages = messages.map((message, index) => this.parseMessageForStorage(message, index, slug))
 
     // Store filtered messages
     const filePath = `${this.filePrefix}/${slug}.json`
@@ -73,6 +73,18 @@ export abstract class BaseSharedConversationService<
       slug,
       original: conversationId,
     } as T)
+  }
+
+  parseMessageForStorage(message: BaseMessage, index: number, slug: string): Record<string, unknown> {
+    return {
+      id: slug + ':' + index,
+      role: message.role,
+      content: message.content,
+    }
+  }
+
+  parseStoredMessageForApi(message: Record<string, unknown>) {
+    return message
   }
 
   canView(): boolean {
