@@ -100,7 +100,7 @@ export class StorageService {
       this.logger.log(`File read successfully from ${key} in bucket ${bucketName}`)
       return data
     } catch (error) {
-      this.logger.error(`Failed to read file: ${error.message}`)
+      this.logger.warn(`Failed to read file: ${error.message} (${key})`)
       throw error
     }
   }
