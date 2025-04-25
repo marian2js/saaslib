@@ -22,7 +22,15 @@ export function useLoggedInUser<T extends BaseLoggedInUser = BaseLoggedInUser>()
 
 export function useGetMe<T extends BaseUser = BaseUser>(options?: FetchHookOptions<{ user: T }>) {
   const { signOut } = useSignOut()
-  const result = useApiFetch<{ user: T }>('/users/me', { credentials: 'include', ...options })
+  const { user: localUser, loading: localLoading } = useLoggedInUser()
+  const shouldFetch = !localLoading && !!localUser
+
+  const result = useApiFetch<{ user: T }>('/users/me', {
+    skip: !shouldFetch,
+    skipDefault: null,
+    credentials: 'include',
+    ...options,
+  })
 
   useEffect(() => {
     if (result.error && result.error.statusCode >= 400 && result.error.statusCode < 500) {
