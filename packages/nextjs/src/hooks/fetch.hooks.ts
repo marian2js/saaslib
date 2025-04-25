@@ -5,7 +5,7 @@ import { FetchApiError } from '../errors'
 import { delay } from '../utils/async.utils'
 
 // If skip is set then skipDefault must also be set
-type FetchHookOptionsWithSkip<T> = { skip: boolean; skipDefault: T }
+type FetchHookOptionsWithSkip<T> = { skip: boolean; skipDefault: T | null }
 type FetchHookOptionsWithoutSkip = { skip?: never; skipDefault?: never }
 
 type RetryOptions = {
