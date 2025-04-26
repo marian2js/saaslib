@@ -1,7 +1,9 @@
 'use server'
 
+import { FetchApiError } from '../errors'
 import { BaseUser } from '../types'
 import { fetchWithAuth, FetchWithAuthOptions } from '../utils/fetch.utils'
+import { signOutServer } from './auth.service'
 
 export async function fetchMe<U extends BaseUser | null>(options?: FetchWithAuthOptions) {
   try {
@@ -10,7 +12,11 @@ export async function fetchMe<U extends BaseUser | null>(options?: FetchWithAuth
       ...options,
     })
     return data?.user ?? null
-  } catch {
+  } catch (err) {
+    if (err instanceof FetchApiError && err.statusCode >= 400 && err.statusCode < 500) {
+      // the user has cookies, but the token is invalid
+      await signOutServer()
+    }
     return null
   }
 }
