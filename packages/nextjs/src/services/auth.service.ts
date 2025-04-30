@@ -79,6 +79,10 @@ export async function signOutServer() {
   await fetchWithAuth('/auth/signout', {
     method: 'POST',
   })
+  await removeAuthCookie()
+}
+
+export async function removeAuthCookie() {
   const cookieData = await cookies()
   cookieData.set('jwt', '', {
     httpOnly: true,
