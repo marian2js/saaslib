@@ -40,6 +40,17 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
     }, {})
   }
 
+  /**
+   * Allows transforming the update payload before it's applied.
+   * Consumers can override this method to modify the DTO.
+   * @param dto The original update data transfer object.
+   * @param user The current user object (optional).
+   * @returns The (potentially) modified update payload.
+   */
+  async transformUpdatePayload(dto: Partial<U>, _user?: U): Promise<Partial<U>> {
+    return dto
+  }
+
   isSubscriptionActive(user: U, subscriptionKey: string): boolean {
     return user.subscriptions && user.subscriptions.has(subscriptionKey)
   }

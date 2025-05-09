@@ -55,7 +55,9 @@ export abstract class BaseUserController<U extends BaseUser> {
     if (errors.length) {
       throw new BadRequestException(Object.values(errors[0].constraints)[0])
     }
-    const update = { ...dto }
+    let update = { ...dto }
+    // Allow consumer to transform the update payload
+    update = await this.baseUserService.transformUpdatePayload(update, user)
 
     // if email is being updated, send verification email
     if (dto.email && dto.email !== user.email) {
