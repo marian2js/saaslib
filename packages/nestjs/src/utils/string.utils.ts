@@ -6,6 +6,10 @@ export function generateSlug(title: string, hashLength = 8): string {
   slug = slug.replace(/-+/g, '-')
   slug = slug.replace(/^-+/, '').replace(/-+$/, '')
 
+  if (hashLength === 0) {
+    return slug
+  }
+
   const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'
   let hash = ''
   for (let i = 0; i < hashLength; i++) {
