@@ -81,6 +81,35 @@ export class EmailService {
     )
   }
 
+  async sendFailedPaymentEmail(user: BaseUser, failureReason: string, amount: string, paymentFixUrl: string) {
+    if (!user.email) {
+      this.logger.warn('Cannot send failed payment email: no email address provided')
+      return
+    }
+
+    const template = this.emailConfig.templates?.failedPayment
+    await this.sendTemplateEmail(
+      user.email,
+      template,
+      {
+        user,
+        failureReason,
+        amount,
+        paymentFixUrl,
+      },
+      {
+        subject: 'Quick action needed for your subscription',
+        html: `<p>Hi ${user.name || 'there'},</p>
+<p>We noticed that your recent payment of ${amount} couldn't be processed successfully.</p>
+<p>Here's what happened: ${failureReason}</p>
+<p>To keep your service running smoothly, please update your payment details here: ${paymentFixUrl}</p>
+<p>We know things happen - cards expire, limits change. This is just a friendly reminder to update your information so you don't experience any interruption in service.</p>
+<p>Need help? Just reply to this email and we'll sort it out together.</p>
+<p>Thanks for being a valued customer!</p>`,
+      },
+    )
+  }
+
   async sendTemplateEmail<T>(
     to: string,
     template: EmailTemplate<T>,

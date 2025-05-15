@@ -16,6 +16,12 @@ export interface EmailConfigOptions {
     newSubscription?: {
       [key: string]: EmailTemplate<{ user: BaseUser; code: string; link: string }>
     }
+    failedPayment?: EmailTemplate<{
+      user: BaseUser
+      failureReason: string
+      amount: string
+      paymentFixUrl: string
+    }>
   }
   newsletters?: [
     {

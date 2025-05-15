@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { UpdateQuery } from 'mongoose'
 import { BadRequestError } from 'passport-headerapikey'
-import { SaaslibOptions } from 'src/types'
 import Stripe from 'stripe'
+import { EmailService } from '../../email/services/email.service'
+import { SaaslibOptions } from '../../types/saaslib-options'
 import { BaseUser, BaseUserService } from '../../user'
 import { UserSubscription } from '../models/user-subscription.model'
 import type { FailedPaymentInfo } from '../types/failed-payment-info'
@@ -15,6 +16,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
   constructor(
     @Inject('SL_OPTIONS') protected options: SaaslibOptions,
     protected userService: BaseUserService<U>,
+    protected emailService: EmailService,
   ) {
     const secretKey = process.env.STRIPE_SECRET_KEY
     if (secretKey) {
@@ -303,7 +305,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
     return result
   }
 
-  async getUsersWithFailedPayments(limit = 100): Promise<FailedPaymentInfo[]> {
+  async getUsersWithFailedPayments(limit = 1000): Promise<FailedPaymentInfo[]> {
     const failedPaymentsInfo: FailedPaymentInfo[] = []
     try {
       const initialPaymentIntents = await this.stripe.paymentIntents.list({
@@ -389,5 +391,26 @@ export class BaseSubscriptionService<U extends BaseUser> {
       )
     }
     return failedPaymentsInfo
+  }
+
+  async sendFailedPaymentEmails(minDaysFromLastEmail = 30) {
+    const failedPayments = await this.getUsersWithFailedPayments()
+    for (const data of failedPayments) {
+      const user = await this.userService.findOne({ email: data.userEmail })
+      if (user) {
+        if (
+          !user.failedPaymentEmailSentAt ||
+          user.failedPaymentEmailSentAt < new Date(Date.now() - minDaysFromLastEmail * 24 * 60 * 60 * 1000)
+        ) {
+          await this.emailService.sendFailedPaymentEmail(
+            user.toJSON() as BaseUser,
+            data.failureReason,
+            data.amount,
+            data.paymentFixUrl,
+          )
+          await this.userService.updateOne({ _id: user._id }, { failedPaymentEmailSentAt: new Date() })
+        }
+      }
+    }
   }
 }

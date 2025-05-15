@@ -67,4 +67,7 @@ export class BaseUser {
     default: new Map(),
   })
   subscriptions: Map<string, UserSubscription>
+
+  @Prop()
+  failedPaymentEmailSentAt?: Date
 }
