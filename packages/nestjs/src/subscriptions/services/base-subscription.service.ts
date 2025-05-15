@@ -5,6 +5,7 @@ import { SaaslibOptions } from 'src/types'
 import Stripe from 'stripe'
 import { BaseUser, BaseUserService } from '../../user'
 import { UserSubscription } from '../models/user-subscription.model'
+import type { FailedPaymentInfo } from '../types/failed-payment-info'
 
 @Injectable()
 export class BaseSubscriptionService<U extends BaseUser> {
@@ -300,5 +301,93 @@ export class BaseSubscriptionService<U extends BaseUser> {
     }
 
     return result
+  }
+
+  async getUsersWithFailedPayments(limit = 100): Promise<FailedPaymentInfo[]> {
+    const failedPaymentsInfo: FailedPaymentInfo[] = []
+    try {
+      const initialPaymentIntents = await this.stripe.paymentIntents.list({
+        limit,
+      })
+
+      const PIsWithRequiresPaymentMethod = initialPaymentIntents.data.filter(
+        (pi) => pi.status === 'requires_payment_method',
+      )
+
+      if (PIsWithRequiresPaymentMethod.length === 0) {
+        return failedPaymentsInfo
+      }
+
+      const customerIdsToVerify = [
+        ...new Set(
+          PIsWithRequiresPaymentMethod.map((pi) => pi.customer).filter((c): c is string => typeof c === 'string'),
+        ),
+      ]
+
+      if (customerIdsToVerify.length === 0) {
+        return failedPaymentsInfo
+      }
+
+      for (const customerId of customerIdsToVerify) {
+        const latestPIsForCustomer = await this.stripe.paymentIntents.list({
+          customer: customerId,
+          limit: 1,
+        })
+
+        if (latestPIsForCustomer.data.length === 0) {
+          continue
+        }
+
+        const latestPI = latestPIsForCustomer.data[0]
+
+        if (latestPI.status === 'requires_payment_method') {
+          const user = await this.userService.findOne({ stripeCustomerId: customerId })
+
+          let paymentFixUrl: string | null = null
+          if (latestPI.invoice && typeof latestPI.invoice === 'string') {
+            try {
+              const invoice = await this.stripe.invoices.retrieve(latestPI.invoice)
+              if (invoice && invoice.hosted_invoice_url) {
+                paymentFixUrl = invoice.hosted_invoice_url
+              } else if (invoice && invoice.status === 'paid') {
+                continue
+              }
+            } catch (invoiceError) {
+              this.logger.error(
+                `Error retrieving invoice ${latestPI.invoice} for PaymentIntent ${latestPI.id}: ${invoiceError.message}`,
+              )
+            }
+          } else if (latestPI.invoice) {
+            const inv = latestPI.invoice as Stripe.Invoice
+            if (inv.hosted_invoice_url) {
+              paymentFixUrl = inv.hosted_invoice_url
+            }
+          }
+
+          const paymentInfo: FailedPaymentInfo = {
+            stripeCustomerId: customerId,
+            paymentIntentId: latestPI.id,
+            paymentIntentStatus: latestPI.status,
+            failureReason: latestPI.last_payment_error?.message,
+            amount: `${latestPI.amount / 100} ${latestPI.currency.toUpperCase()}`,
+            created: new Date(latestPI.created * 1000).toISOString(),
+            paymentFixUrl: paymentFixUrl,
+          }
+
+          if (user) {
+            paymentInfo.userId = user.id
+            paymentInfo.userEmail = user.email
+          }
+          failedPaymentsInfo.push(paymentInfo)
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        'Error fetching or processing failed payments from Stripe:',
+        error.message,
+        JSON.stringify(error, null, 2),
+      )
+    }
+    return failedPaymentsInfo
   }
 }
