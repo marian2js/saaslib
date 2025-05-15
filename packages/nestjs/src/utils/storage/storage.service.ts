@@ -19,8 +19,8 @@ interface ListItemsResponse {
 
 @Injectable()
 export class StorageService {
-  private readonly logger = new Logger(StorageService.name)
-  private s3Client: S3Client
+  protected readonly logger = new Logger(StorageService.name)
+  protected s3Client: S3Client
 
   constructor() {
     const endpoint = process.env.AWS_S3_ENDPOINT

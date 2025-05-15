@@ -8,7 +8,7 @@ import { UserSubscription } from '../models/user-subscription.model'
 
 @Injectable()
 export class BaseSubscriptionService<U extends BaseUser> {
-  private readonly logger = new Logger(BaseSubscriptionService.name)
+  protected readonly logger = new Logger(BaseSubscriptionService.name)
   protected readonly stripe: Stripe
 
   constructor(
