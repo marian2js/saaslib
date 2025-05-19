@@ -139,8 +139,13 @@ export class EmailService {
       return
     }
 
+    // Format the sender as "Name <email>" if senderName is provided
+    const formattedSender = this.emailConfig.senderName
+      ? `${this.emailConfig.senderName} <${this.emailConfig.from}>`
+      : this.emailConfig.from
+
     const params = {
-      Source: this.emailConfig.from,
+      Source: formattedSender,
       Destination: {
         ToAddresses: to,
       },

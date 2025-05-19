@@ -9,6 +9,7 @@ export interface EmailTemplate<T> {
 
 export interface EmailConfigOptions {
   from: string
+  senderName?: string
   templates: {
     welcome?: EmailTemplate<{ user: BaseUser; email: string; name: string }>
     verification?: EmailTemplate<{ user: BaseUser; code: string; link: string }>
