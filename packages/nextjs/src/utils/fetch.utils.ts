@@ -91,11 +91,16 @@ export async function fetchWithAuth<T>(path: string, options?: FetchWithAuthOpti
     return fetchApi<T>(path, options)
   }
   const token = JSON.parse(tokenCookie.value).accessToken
+  
+  // Build headers with default Content-Type, but allow user to override or remove it
+  const userHeaders = options?.headers ?? {}
+  const hasContentType = 'Content-Type' in userHeaders
+  
   return fetchApi<T>(path, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers ?? {}),
+      ...(!hasContentType && { 'Content-Type': 'application/json' }),
+      ...userHeaders,
       Authorization: `Bearer ${token}`,
     },
   })
