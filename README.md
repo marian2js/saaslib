@@ -8,8 +8,8 @@ A batteries-included NestJS library ecosystem for building modern SaaS applicati
   - [Table of Contents](#table-of-contents)
   - [Why SaaS Library?](#why-saas-library)
   - [Packages](#packages)
-    - [@saaslib/nestjs (v0.0.40)](#saaslibnestjs-v0040)
-    - [@saaslib/nextjs (v0.0.41)](#saaslibnextjs-v0041)
+    - [@saaslib/nestjs](#saaslibnestjs)
+    - [@saaslib/nextjs](#saaslibnextjs)
   - [Quick Start](#quick-start)
   - [Architecture Benefits](#architecture-benefits)
   - [Key Design Principles](#key-design-principles)
@@ -28,7 +28,7 @@ A batteries-included NestJS library ecosystem for building modern SaaS applicati
 
 ## Packages
 
-### @saaslib/nestjs (v0.0.40)
+### @saaslib/nestjs
 
 The core NestJS library providing comprehensive SaaS backend features:
 
@@ -47,7 +47,7 @@ The core NestJS library providing comprehensive SaaS backend features:
   - Role-based access control (RBAC)
   - Newsletter system with templated emails
 
-### @saaslib/nextjs (v0.0.41)
+### @saaslib/nextjs
 
 Optional Next.js integration providing type-safe hooks and utilities for interacting with the @saaslib/nestjs backend:
 
@@ -71,7 +71,7 @@ SaaS Library can be integrated into your NestJS project gradually. Start with th
 
 1. Install the core NestJS package:
 ```bash
-npm i @saaslib/nestjs @nestjs/common@^10.4 @nestjs/core@^10.4
+npm i @saaslib/nestjs @nestjs/common @nestjs/core
 ```
 
 2. Initialize the NestJS module with your desired features:

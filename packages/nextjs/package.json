@@ -1,6 +1,6 @@
 {
   "name": "@saaslib/nextjs",
-  "version": "0.0.55",
+  "version": "0.0.59",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -19,7 +19,7 @@
   "peerDependencies": {
     "@stripe/stripe-js": "^5.5.0",
     "jsonwebtoken": "^9.0.2",
-    "next": "^15.1.6",
+    "next": "^15.1.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
