@@ -27,10 +27,10 @@ export function useCreateCheckoutSession() {
   >()
 
   const createCheckoutSession = useCallback(
-    async (type: string, priceId: string) => {
+    async (type: string, priceId: string, currency?: string) => {
       const result = await callback('/subscriptions/checkout-session', {
         method: 'POST',
-        body: JSON.stringify({ type, priceId }),
+        body: JSON.stringify({ type, priceId, currency }),
       })
       return result
     },
@@ -47,7 +47,7 @@ export const useStripeSubscription = () => {
   const router = useRouter()
 
   const subscribe = useCallback(
-    async (type: string, priceId: string): Promise<{ ok: boolean; message?: string }> => {
+    async (type: string, priceId: string, currency?: string): Promise<{ ok: boolean; message?: string }> => {
       setLoading(true)
       setError(null)
 
@@ -57,7 +57,7 @@ export const useStripeSubscription = () => {
           return { ok: false, message: 'Stripe initialization failed' }
         }
 
-        const result = await createCheckoutSession(type, priceId)
+        const result = await createCheckoutSession(type, priceId, currency)
         if (!result) {
           return { ok: false, message: 'Failed to create checkout session' }
         }

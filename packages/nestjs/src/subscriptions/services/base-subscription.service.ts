@@ -30,6 +30,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
     priceId: string,
     successUrl: string,
     cancelUrl: string,
+    currency?: string,
   ): Promise<string> {
     const stripePrice = await this.stripe.prices.retrieve(priceId)
     if (!stripePrice) {
@@ -44,7 +45,6 @@ export class BaseSubscriptionService<U extends BaseUser> {
     const options = this.options.subscriptions[type].products.find((product) => product.id === stripePrice.product)
 
     const session = await this.stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       line_items: [
         {
           price: priceId,
@@ -52,6 +52,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
         },
       ],
       mode: 'subscription',
+      ...(currency ? { currency } : {}),
       client_reference_id: user._id.toString(),
       ...(user.stripeCustomerId ? { customer: user.stripeCustomerId } : { customer_email: user.email }),
       success_url: successUrl,

@@ -37,7 +37,12 @@ export class BaseSubscriptionController<U extends BaseUser> {
 
   @UseGuards(UserGuard)
   @Post('checkout-session')
-  async createCheckoutSession(@Req() req: Request, @Body('priceId') priceId: string, @Body('type') type: string) {
+  async createCheckoutSession(
+    @Req() req: Request,
+    @Body('priceId') priceId: string,
+    @Body('type') type: string,
+    @Body('currency') currency?: string,
+  ) {
     const userId = (req.user as { id: string }).id
     const user = await this.baseUserService.findOne({ _id: userId })
     if (!user) {
@@ -66,13 +71,14 @@ export class BaseSubscriptionController<U extends BaseUser> {
       return { ok: true }
     }
     const { checkoutSuccessUrl, checkoutCancelUrl } = this.options.subscriptions[type]
-    this.logger.log(`Creating checkout session for user ${user._id} with price ${priceId}`)
+    this.logger.log(`Creating checkout session for user ${user._id} with price ${priceId} and currency ${currency}`)
     const sessionId = await this.baseSubscriptionService.createCheckoutSession(
       user,
       type,
       priceId,
       checkoutSuccessUrl,
       checkoutCancelUrl,
+      currency,
     )
     return {
       sessionId,
