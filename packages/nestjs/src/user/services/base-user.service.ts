@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose'
 import { Request } from 'express'
 import { Model } from 'mongoose'
+import { UserSubscription } from 'src/subscriptions'
 import { BaseEntityService } from '../../base/base-entity.service'
 import { BaseUser } from '../models/base-user.model'
 
@@ -86,6 +87,10 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
       throw new NotFoundException('User not found')
     }
     return user.subscriptions && user.subscriptions.has(subscriptionKey)
+  }
+
+  getSubscription(user: U, subscriptionKey: string): UserSubscription | undefined {
+    return user.subscriptions.get(subscriptionKey)
   }
 
   async requireRoleOnRequest(req: Request, role: string): Promise<U> {

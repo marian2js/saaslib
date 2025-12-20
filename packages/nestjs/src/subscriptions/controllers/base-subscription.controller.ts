@@ -240,7 +240,7 @@ export class BaseSubscriptionController<U extends BaseUser> {
         stripeCustomerId: session.customer,
         [`subscriptions.${type}`]: {
           product: productId,
-          periodEnd: new Date(subscription.current_period_end * 1000),
+          periodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
           stripeSubscriptionId: session.subscription,
         },
         ...(userSubscription?.nextProduct
@@ -282,8 +282,9 @@ export class BaseSubscriptionController<U extends BaseUser> {
 
     const update: Record<string, any> = {
       ...(userSubscription?.product !== productId ? { [`subscriptions.${type}.product`]: productId } : {}),
-      ...(userSubscription?.periodEnd.getTime() !== new Date(subscription.current_period_end * 1000).getTime()
-        ? { [`subscriptions.${type}.periodEnd`]: new Date(subscription.current_period_end * 1000) }
+      ...(userSubscription?.periodEnd.getTime() !==
+      new Date(subscription.items.data[0].current_period_end * 1000).getTime()
+        ? { [`subscriptions.${type}.periodEnd`]: new Date(subscription.items.data[0].current_period_end * 1000) }
         : {}),
       ...(userSubscription?.stripeSubscriptionId !== subscription.id
         ? { [`subscriptions.${type}.stripeSubscriptionId`]: subscription.id }

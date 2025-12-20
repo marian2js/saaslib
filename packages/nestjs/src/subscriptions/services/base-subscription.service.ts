@@ -20,7 +20,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
   ) {
     const secretKey = process.env.STRIPE_SECRET_KEY
     if (secretKey) {
-      this.stripe = new Stripe(secretKey, { apiVersion: '2024-11-20.acacia' })
+      this.stripe = new Stripe(secretKey, { apiVersion: '2025-12-15.clover' })
     }
   }
 
@@ -95,7 +95,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
     })
     const latestInvoice = await this.stripe.invoices.retrieve(updatedSubscription.latest_invoice.toString())
 
-    if (!latestInvoice.payment_intent && latestInvoice.amount_due > 0) {
+    if (latestInvoice.amount_due > 0) {
       await this.stripe.paymentIntents.create({
         amount: latestInvoice.amount_due,
         currency: latestInvoice.currency,
@@ -108,7 +108,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
 
     const commonSet = {
       [`subscriptions.${type}.stripeSubscriptionId`]: updatedSubscription.id,
-      [`subscriptions.${type}.periodEnd`]: new Date(updatedSubscription.current_period_end * 1000),
+      [`subscriptions.${type}.periodEnd`]: new Date(updatedSubscription.items.data[0].current_period_end * 1000),
     }
     const commonUnset = {
       ...(userSubscription.cancelled ? { [`subscriptions.${type}.cancelled`]: '' } : {}),
@@ -120,7 +120,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
         $set: {
           ...commonSet,
           [`subscriptions.${type}.product`]: stripePrice.product,
-          [`subscriptions.${type}.periodEnd`]: new Date(updatedSubscription.current_period_end * 1000),
+          [`subscriptions.${type}.periodEnd`]: new Date(updatedSubscription.items.data[0].current_period_end * 1000),
         },
         $unset: {
           ...commonUnset,
@@ -335,6 +335,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
         const latestPIsForCustomer = await this.stripe.paymentIntents.list({
           customer: customerId,
           limit: 1,
+          expand: ['data.latest_charge.invoice'],
         })
 
         if (latestPIsForCustomer.data.length === 0) {
@@ -347,23 +348,15 @@ export class BaseSubscriptionService<U extends BaseUser> {
           const user = await this.userService.findOne({ stripeCustomerId: customerId })
 
           let paymentFixUrl: string | null = null
-          if (latestPI.invoice && typeof latestPI.invoice === 'string') {
-            try {
-              const invoice = await this.stripe.invoices.retrieve(latestPI.invoice)
-              if (invoice && invoice.hosted_invoice_url) {
+
+          // Try to get invoice URL from the latest charge's invoice
+          if (latestPI.latest_charge) {
+            const charge = latestPI.latest_charge as any
+            if (charge.invoice) {
+              const invoice = charge.invoice as Stripe.Invoice
+              if (invoice.hosted_invoice_url) {
                 paymentFixUrl = invoice.hosted_invoice_url
-              } else if (invoice && invoice.status === 'paid') {
-                continue
               }
-            } catch (invoiceError) {
-              this.logger.error(
-                `Error retrieving invoice ${latestPI.invoice} for PaymentIntent ${latestPI.id}: ${invoiceError.message}`,
-              )
-            }
-          } else if (latestPI.invoice) {
-            const inv = latestPI.invoice as Stripe.Invoice
-            if (inv.hosted_invoice_url) {
-              paymentFixUrl = inv.hosted_invoice_url
             }
           }
 
