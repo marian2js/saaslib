@@ -131,6 +131,19 @@ export class StorageService {
     }
   }
 
+  async uploadFromBuffer(bucketName: string, key: string, buffer: Buffer): Promise<string> {
+    const params = {
+      Bucket: bucketName,
+      Key: key,
+      Body: buffer,
+      ContentType: 'application/octet-stream',
+    }
+    const command = new PutObjectCommand(params)
+    await this.s3Client.send(command)
+    this.logger.log(`File uploaded from buffer to ${bucketName}/${key}`)
+    return key
+  }
+
   async getPresignedUrl(
     key: string,
     contentType: string,
