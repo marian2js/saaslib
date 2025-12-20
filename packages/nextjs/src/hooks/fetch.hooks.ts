@@ -105,13 +105,19 @@ export function useApiCallback<T>() {
     setError(null)
     try {
       const fullUrl = url.startsWith('/') ? process.env.NEXT_PUBLIC_API_ENDPOINT + url : url
+
+      const headers: { [key: string]: any } = {
+        'Content-Type': 'application/json',
+        ...(options?.headers ?? {}),
+      }
+      if (options?.headers && 'Content-Type' in options?.headers) {
+        delete headers['Content-Type']
+      }
+
       const res = await fetch(fullUrl, {
         credentials: 'include',
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(options.headers || {}),
-        },
+        headers,
       })
       const result = await res.json()
       if (result?.error) {
