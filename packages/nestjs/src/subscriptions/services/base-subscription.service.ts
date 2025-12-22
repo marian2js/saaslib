@@ -165,6 +165,10 @@ export class BaseSubscriptionService<U extends BaseUser> {
     return this.stripe.subscriptions.retrieve(subscriptionId)
   }
 
+  async getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    return this.stripe.paymentIntents.retrieve(paymentIntentId)
+  }
+
   async getBillingUrl(user: U, type: string): Promise<string> {
     const customer = await this.stripe.customers.retrieve(user.stripeCustomerId)
     if (!customer) {
@@ -200,6 +204,7 @@ export class BaseSubscriptionService<U extends BaseUser> {
         // 'customer.subscription.created',
         'customer.subscription.updated',
         'customer.subscription.deleted',
+        'invoice.payment_failed',
         // 'customer.subscription.trial_will_end',
       ],
     })

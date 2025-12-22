@@ -207,6 +207,9 @@ export class BaseSubscriptionController<U extends BaseUser> {
       case 'customer.subscription.deleted':
         await this.onCustomerSubscriptionDeleted(event)
         break
+      case 'invoice.payment_failed':
+        await this.onInvoicePaymentFailed(event)
+        break
     }
     return {}
   }
@@ -336,5 +339,45 @@ export class BaseSubscriptionController<U extends BaseUser> {
       } as UpdateQuery<U>)
       this.logger.log(`Subscription ${subscription.id} for user ${user._id} was deleted`)
     }
+  }
+
+  protected async onInvoicePaymentFailed(event: Stripe.InvoicePaymentFailedEvent) {
+    const invoice = event.data.object
+    const customerId = invoice.customer
+    if (typeof customerId !== 'string') {
+      this.logger.error(`onInvoicePaymentFailed: Customer ID is not a string for invoice ${invoice.id}`)
+      return
+    }
+
+    const user = await this.baseUserService.findOne({ stripeCustomerId: customerId })
+    if (!user) {
+      this.logger.error(`onInvoicePaymentFailed: User not found for customer ${customerId}`)
+      return
+    }
+
+    this.logger.log(`Invoice ${invoice.id} payment failed for user ${user._id}`)
+
+    let failureReason: string | null | undefined = invoice.billing_reason as string | null | undefined
+
+    // Try to get more specific error reason from last_finalization_error
+    if (invoice.last_finalization_error?.message) {
+      failureReason = invoice.last_finalization_error.message
+    }
+
+    const paymentInfo = {
+      failureReason,
+      amount: `${invoice.amount_due / 100} ${invoice.currency.toUpperCase()}`,
+      paymentFixUrl: invoice.hosted_invoice_url,
+    }
+
+    await this.emailService.sendFailedPaymentEmail(
+      user,
+      paymentInfo.failureReason,
+      paymentInfo.amount,
+      paymentInfo.paymentFixUrl,
+    )
+
+    // Update the last email sent time to prevent duplicate emails from the cron job
+    await this.baseUserService.updateOne({ _id: user._id }, { failedPaymentEmailSentAt: new Date() })
   }
 }
