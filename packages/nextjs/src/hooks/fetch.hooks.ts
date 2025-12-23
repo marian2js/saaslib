@@ -110,8 +110,10 @@ export function useApiCallback<T>() {
         'Content-Type': 'application/json',
         ...(options?.headers ?? {}),
       }
+
+      // allow consumers to set content-type to undefined
       if (options?.headers && 'Content-Type' in options?.headers) {
-        delete headers['Content-Type']
+        headers['Content-Type'] = options?.headers['Content-Type']
       }
 
       const res = await fetch(fullUrl, {
