@@ -121,4 +121,89 @@ describe('BaseUserService', () => {
       expect(result.insertedCount).toEqual(2)
     })
   })
+
+  describe('getActiveSubscriptions', () => {
+    const now = Date.now()
+    const hour = 60 * 60 * 1000
+
+    it('should return empty object if no subscriptions', () => {
+      const user = { subscriptions: new Map() } as any
+      expect(service.getActiveSubscriptions(user)).toEqual({})
+    })
+
+    it('should return true for active subscription (future periodEnd)', () => {
+      const user = {
+        subscriptions: new Map([
+          [
+            'sub1',
+            {
+              periodEnd: new Date(now + hour),
+              cancelled: false,
+            },
+          ],
+        ]),
+      } as any
+      expect(service.getActiveSubscriptions(user)).toEqual({ sub1: true })
+    })
+
+    it('should return true for active subscription in grace period (< 72h)', () => {
+      const user = {
+        subscriptions: new Map([
+          [
+            'sub1',
+            {
+              periodEnd: new Date(now - 71 * hour), // 71 hours ago
+              cancelled: false,
+            },
+          ],
+        ]),
+      } as any
+      expect(service.getActiveSubscriptions(user)).toEqual({ sub1: true })
+    })
+
+    it('should return false for expired subscription (> 72h)', () => {
+      const user = {
+        subscriptions: new Map([
+          [
+            'sub1',
+            {
+              periodEnd: new Date(now - 73 * hour), // 73 hours ago
+              cancelled: false,
+            },
+          ],
+        ]),
+      } as any
+      expect(service.getActiveSubscriptions(user)).toEqual({ sub1: false })
+    })
+
+    it('should return false for cancelled subscription (even if future periodEnd)', () => {
+      const user = {
+        subscriptions: new Map([
+          [
+            'sub1',
+            {
+              periodEnd: new Date(now + hour),
+              cancelled: true,
+            },
+          ],
+        ]),
+      } as any
+      expect(service.getActiveSubscriptions(user)).toEqual({ sub1: false })
+    })
+
+    it('should return false for cancelled subscription (even if in grace period)', () => {
+      const user = {
+        subscriptions: new Map([
+          [
+            'sub1',
+            {
+              periodEnd: new Date(now - hour),
+              cancelled: true,
+            },
+          ],
+        ]),
+      } as any
+      expect(service.getActiveSubscriptions(user)).toEqual({ sub1: false })
+    })
+  })
 })

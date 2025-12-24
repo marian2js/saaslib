@@ -8,6 +8,12 @@ import { BaseUser } from '../models/base-user.model'
 
 @Injectable()
 export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
+  /**
+   * The grace period in hours for active subscriptions.
+   * Can be overridden by consumers.
+   */
+  protected subscriptionsGracePeriodHours = 72
+
   constructor(@InjectModel(BaseUser.name) private baseUserModel: Model<U>) {
     super(baseUserModel)
   }
@@ -50,6 +56,24 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
    */
   async transformUpdatePayload(dto: Partial<U>, _user?: U): Promise<Partial<U>> {
     return dto
+  }
+
+  getActiveSubscriptions(user: U): Record<string, boolean> {
+    if (!user.subscriptions || user.subscriptions.size === 0) {
+      return {}
+    }
+
+    const gracePeriodMs = this.subscriptionsGracePeriodHours * 60 * 60 * 1000
+    const now = Date.now()
+
+    return Array.from(user.subscriptions.entries()).reduce(
+      (acc, [key, subscription]) => {
+        const active = !subscription.cancelled && now < new Date(subscription.periodEnd).getTime() + gracePeriodMs
+        acc[key] = active
+        return acc
+      },
+      {} as Record<string, boolean>,
+    )
   }
 
   isSubscriptionActive(user: U, subscriptionKey: string): boolean {
