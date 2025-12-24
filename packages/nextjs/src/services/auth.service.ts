@@ -66,7 +66,7 @@ export async function verifyOAuthCode(code: string) {
 }
 
 export async function verifyEmail(userId: string, code: string) {
-  const res = await fetchApi<{ ok: boolean }>('/auth/verify-email', {
+  await fetchApi<{ ok: boolean }>('/auth/verify-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

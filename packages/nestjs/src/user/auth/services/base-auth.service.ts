@@ -173,7 +173,7 @@ export class BaseAuthService {
         return { userId }
       }
       return null
-    } catch (error) {
+    } catch {
       return null
     }
   }

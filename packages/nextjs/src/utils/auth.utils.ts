@@ -17,7 +17,7 @@ export function isAccessTokenExpired(token: string): boolean {
     }
 
     return false
-  } catch (error) {
+  } catch {
     return true
   }
 }

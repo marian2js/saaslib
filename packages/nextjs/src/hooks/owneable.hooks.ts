@@ -50,7 +50,7 @@ export function useUpdateOwnableItem<UpdateDto>(entityKey: string) {
   return { updateItem, success, loading, error }
 }
 
-export function useDeleteOwnableItem<T>(entityKey: string) {
+export function useDeleteOwnableItem(entityKey: string) {
   const { callback, success, loading, error } = useApiCallback<{ ok: true }>()
 
   const deleteItem = useCallback(

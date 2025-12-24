@@ -27,7 +27,7 @@ export async function fetchWithRetry(url: string, options: FetchApiOptions): Pro
     try {
       const response = await fetch(url, {
         ...options,
-        cache: options.cache ?? options.next?.revalidate ? undefined : 'no-store',
+        cache: (options.cache ?? options.next?.revalidate) ? undefined : 'no-store',
         headers: {
           ...options.headers,
           ...(process.env.API_KEY && {

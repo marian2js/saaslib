@@ -91,16 +91,16 @@ export function useUpdateConversation<T extends BaseConversation<any> = BaseConv
   return useUpdateOwnableItem<Partial<T>>('conversations')
 }
 
-export function useDeleteConversation<T extends BaseConversation<any> = BaseConversation<any>>() {
-  return useDeleteOwnableItem<Partial<T>>('conversations')
+export function useDeleteConversation() {
+  return useDeleteOwnableItem('conversations')
 }
 
 export function useUpdateMessage<T extends BaseMessage<any> = BaseMessage<any>>() {
   return useUpdateOwnableItem<Partial<T>>('messages')
 }
 
-export function useDeleteMessage<T extends BaseMessage<any> = BaseMessage<any>>() {
-  return useDeleteOwnableItem<Partial<T>>('messages')
+export function useDeleteMessage() {
+  return useDeleteOwnableItem('messages')
 }
 
 export function useRetryMessage<TMessage extends BaseMessage>() {
@@ -150,8 +150,8 @@ export function useUpdateSharedConversation<T extends BaseSharedConversation<any
   return useUpdateOwnableItem<Partial<T>>('shared-conversations')
 }
 
-export function useDeleteSharedConversation<T extends BaseSharedConversation<any> = BaseSharedConversation>() {
-  return useDeleteOwnableItem<Partial<T>>('shared-conversations')
+export function useDeleteSharedConversation() {
+  return useDeleteOwnableItem('shared-conversations')
 }
 
 export function useCreateConversationFromShared<T extends BaseConversation = BaseConversation>() {
