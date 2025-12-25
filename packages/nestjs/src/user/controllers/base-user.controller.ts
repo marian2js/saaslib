@@ -39,7 +39,6 @@ export abstract class BaseUserController<U extends BaseUser> {
     }
     return {
       user: this.baseUserService.getApiObject(user),
-      subscriptions: this.baseUserService.getActiveSubscriptions(user),
     }
   }
 
