@@ -26,6 +26,62 @@ describe('BaseUserService', () => {
     expect(service).toBeDefined()
   })
 
+  describe('isSubscriptionActiveOnRequest', () => {
+    it('should return false if no user id on request', async () => {
+      const req = { user: {} }
+      const res = await service.isSubscriptionActiveOnRequest(req as any, 'test')
+      expect(res).toBe(false)
+    })
+
+    it('should return false if user not found', async () => {
+      const req = { user: { id: '507f1f77bcf86cd799439011' } }
+      jest.spyOn(service, 'findOne').mockResolvedValue(null)
+      const res = await service.isSubscriptionActiveOnRequest(req as any, 'test')
+      expect(res).toBe(false)
+    })
+
+    it('should return false if subscription is not active', async () => {
+      const req = { user: { id: '507f1f77bcf86cd799439011' } }
+      const user = { subscriptions: new Map() } as any
+      jest.spyOn(service, 'findOne').mockResolvedValue(user)
+      const res = await service.isSubscriptionActiveOnRequest(req as any, 'test')
+      expect(res).toBe(false)
+    })
+
+    it('should return true if subscription is active', async () => {
+      const req = { user: { id: '507f1f77bcf86cd799439011' } }
+      const user = { subscriptions: new Map([['test', {}]]) } as any
+      jest.spyOn(service, 'findOne').mockResolvedValue(user)
+      const res = await service.isSubscriptionActiveOnRequest(req as any, 'test')
+      expect(res).toBe(true)
+    })
+  })
+
+  describe('requireSubscriptionOnRequest', () => {
+    it('should throw NotFoundException if user not found', async () => {
+      const req = { user: { id: '507f1f77bcf86cd799439011' } }
+      jest.spyOn(service, 'findOne').mockResolvedValue(null)
+      await expect(service.requireSubscriptionOnRequest(req as any, 'test')).rejects.toThrow('User not found')
+    })
+
+    it('should throw ForbiddenException if subscription is not active', async () => {
+      const req = { user: { id: '507f1f77bcf86cd799439011' } }
+      const user = { subscriptions: new Map() } as any
+      jest.spyOn(service, 'findOne').mockResolvedValue(user)
+      await expect(service.requireSubscriptionOnRequest(req as any, 'test')).rejects.toThrow(
+        'test subscription required',
+      )
+    })
+
+    it('should return user if subscription is active', async () => {
+      const req = { user: { id: '507f1f77bcf86cd799439011' } }
+      const user = { subscriptions: new Map([['test', {}]]) } as any
+      jest.spyOn(service, 'findOne').mockResolvedValue(user)
+      const res = await service.requireSubscriptionOnRequest(req as any, 'test')
+      expect(res).toBe(user)
+    })
+  })
+
   describe('create', () => {
     it('should create a new user with valid email', () => {
       // const newUser = { email: 'newuser@example.com' }

@@ -74,19 +74,22 @@ export class BaseUserService<U extends BaseUser> extends BaseEntityService<U> {
     if (!user) {
       throw new NotFoundException('User not found')
     }
-    if (!user.subscriptions || !user.subscriptions.has(subscriptionKey)) {
-      throw new ForbiddenException('Active subscription required')
+    if (!this.isSubscriptionActive(user, subscriptionKey)) {
+      throw new ForbiddenException(`${subscriptionKey} subscription required`)
     }
     return user
   }
 
   async isSubscriptionActiveOnRequest(req: Request, subscriptionKey: string): Promise<boolean> {
-    const userId = ((req as any).user as { id: string }).id
+    const userId = ((req as any).user as { id: string })?.id
+    if (!userId) {
+      return false
+    }
     const user = await this.findOne({ _id: userId })
     if (!user) {
-      throw new NotFoundException('User not found')
+      return false
     }
-    return user.subscriptions && user.subscriptions.has(subscriptionKey)
+    return this.isSubscriptionActive(user, subscriptionKey)
   }
 
   getSubscription(user: U, subscriptionKey: string): UserSubscription | undefined {
