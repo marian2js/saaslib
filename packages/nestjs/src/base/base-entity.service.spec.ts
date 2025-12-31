@@ -1,5 +1,5 @@
 import { INestApplication, Injectable } from '@nestjs/common'
-import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { getModelToken, InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model, Types } from 'mongoose'
 import { testModuleImports } from 'src/tests/test.helpers'
@@ -42,6 +42,9 @@ describe('BaseEntityService', () => {
 
     app = module.createNestApplication()
     service = module.get<FakeEntityService>(FakeEntityService)
+
+    const model = module.get<Model<FakeModel>>(getModelToken(FakeModel.name))
+    await model.ensureIndexes()
 
     await app.init()
   })
