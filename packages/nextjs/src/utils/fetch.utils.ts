@@ -100,7 +100,11 @@ export async function fetchWithAuth<T>(path: string, options?: FetchWithAuthOpti
 
   // allow consumers to set content-type to undefined
   if (options?.headers && 'Content-Type' in options?.headers) {
-    headers['Content-Type'] = options?.headers['Content-Type']
+    if (!options?.headers['Content-Type']) {
+      delete headers['Content-Type']
+    } else {
+      headers['Content-Type'] = options?.headers['Content-Type']
+    }
   }
 
   return fetchApi<T>(path, {
