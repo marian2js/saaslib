@@ -38,7 +38,10 @@ export function useGetMe<T extends BaseUser = BaseUser>(options?: FetchHookOptio
     }
   }, [result.error, signOut])
 
-  return result
+  return {
+    ...result,
+    loading: result.loading || (!result.data && !result.error),
+  }
 }
 
 export function useDeleteAvatar() {
