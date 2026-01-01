@@ -38,9 +38,11 @@ export function useGetMe<T extends BaseUser = BaseUser>(options?: FetchHookOptio
     }
   }, [result.error, signOut])
 
+  const isSkipped = options?.skip ?? !shouldFetch
+
   return {
     ...result,
-    loading: result.loading || (!result.data && !result.error),
+    loading: localLoading || (!isSkipped && (result.loading || (!result.data && !result.error))),
   }
 }
 
