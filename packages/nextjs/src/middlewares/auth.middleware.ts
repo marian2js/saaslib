@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { refreshAccessToken } from '../services'
 import { AuthToken } from '../types/auth.types'
 import { getUserIdFromToken, isAccessTokenExpired } from '../utils/auth.utils'
+import { getCookieDomain } from '../utils/cookie.utils'
 
 export async function authRequiredMiddleware(req: NextRequest): Promise<{ redirectTo?: URL; token?: AuthToken }> {
   const tokenCookie = req.cookies.get('jwt')
@@ -21,15 +22,13 @@ export async function authRequiredMiddleware(req: NextRequest): Promise<{ redire
       }
     }
     const response = NextResponse.next()
+    const domain = getCookieDomain()
     response.cookies.set({
       name: 'jwt',
       value: JSON.stringify({ accessToken: newAccessToken, refreshToken }),
       httpOnly: true,
       path: '/',
-      domain:
-        process.env.NODE_ENV === 'production'
-          ? '.' + process.env.NEXT_PUBLIC_API_ENDPOINT!.replace('https://', '')
-          : 'localhost',
+      ...(domain ? { domain } : {}),
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
     })

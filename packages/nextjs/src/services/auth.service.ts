@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { BaseLoggedInUser } from '../types'
 import { fetchApi, fetchWithAuth } from '../utils'
+import { getCookieDomain } from '../utils/cookie.utils'
 import { isAccessTokenExpired } from '../utils/auth.utils'
 
 export async function isLoggedIn(): Promise<boolean> {
@@ -84,10 +85,11 @@ export async function signOutServer() {
 
 export async function removeAuthCookie() {
   const cookieData = await cookies()
+  const domain = getCookieDomain()
   cookieData.set('jwt', '', {
     httpOnly: true,
     path: '/',
-    domain: getCookieDomain(),
+    ...(domain ? { domain } : {}),
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 0,
@@ -107,10 +109,11 @@ export async function refreshAccessToken(userId: string, refreshToken: string): 
 
 export async function setAuthCookie(token: { accessToken: string; refreshToken: string }, rememberMe: boolean = true) {
   const cookieData = await cookies()
+  const domain = getCookieDomain()
   cookieData.set('jwt', JSON.stringify(token), {
     httpOnly: true,
     path: '/',
-    domain: getCookieDomain(),
+    ...(domain ? { domain } : {}),
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: rememberMe ? 60 * 60 * 24 * 365 : 60 * 60 * 24,
@@ -137,12 +140,3 @@ export async function resetPassword(code: string, newPassword: string) {
   })
 }
 
-function getCookieDomain() {
-  if (process.env.NODE_ENV === 'production') {
-    const url = new URL(process.env.NEXT_PUBLIC_API_ENDPOINT!)
-    const domainParts = url.hostname.split('.')
-    return '.' + domainParts.slice(-2).join('.')
-  } else {
-    return 'localhost'
-  }
-}
