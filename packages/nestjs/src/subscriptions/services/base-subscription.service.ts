@@ -201,6 +201,12 @@ export class BaseSubscriptionService<U extends BaseUser> {
     return config.products.some((product) => product.prices.includes(priceId))
   }
 
+  isProductAllowed(type: string, productId: string): boolean {
+    const config = this.options.subscriptions?.[type]
+    if (!config) return false
+    return config.products.some((product) => product.id === productId)
+  }
+
   getCheckoutUrls(type: string): { checkoutSuccessUrl: string; checkoutCancelUrl: string; billingReturnUrl: string } {
     const config = this.options.subscriptions?.[type]
     if (!config) {

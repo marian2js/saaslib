@@ -28,6 +28,7 @@ type AdminUser = {
       periodEnd?: string
       nextProduct?: string
       cancelled?: boolean
+      stripeSubscriptionId?: string
     }
   >
 }
@@ -54,6 +55,7 @@ export default function UserDetailPage() {
   const { callback: updateUser, loading: saving } = useApiCallback<AdminUserResponse>()
   const { callback: changeSubscription, loading: changingPlan } = useApiCallback<{ ok: true }>()
   const { callback: startSubscription, loading: starting } = useApiCallback<{ sessionId: string }>()
+  const { callback: grantSubscription, loading: granting } = useApiCallback<{ ok: true }>()
   const { callback: cancelSubscription, loading: cancelling } = useApiCallback<{ ok: true }>()
   const { callback: resumeSubscription, loading: resuming } = useApiCallback<{ ok: true }>()
 
@@ -126,6 +128,15 @@ export default function UserDetailPage() {
       }
       await stripe.redirectToCheckout({ sessionId: res.sessionId })
     }
+  }
+
+  const handleGrant = async (type: string, productId: string) => {
+    if (!productId) return
+    await grantSubscription('/admin/subscriptions/grant', {
+      method: 'POST',
+      body: JSON.stringify({ userId, type, productId }),
+    })
+    refetch()
   }
 
   const handleCancel = async (type: string) => {
@@ -260,44 +271,63 @@ export default function UserDetailPage() {
                     ) : (
                       <p className="text-sm text-muted-foreground">No active subscription for this type.</p>
                     )}
-                    <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                      <div className="space-y-2">
-                        <Label htmlFor={`plan-${type}`}>Change plan</Label>
-                        <Select id={`plan-${type}`} defaultValue="">
-                          <option value="">Select plan</option>
-                          {catalog?.products.flatMap((product) =>
-                            product.prices.map((priceId) => {
-                              const label =
-                                configCatalog?.prices.find((price) => price.id === priceId)?.label ?? priceId
-                              return (
-                                <option key={`${product.id}-${priceId}`} value={priceId}>
-                                  {label}
-                                </option>
-                              )
-                            }),
-                          )}
-                        </Select>
+                    {subscription ? (
+                      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                        <div className="space-y-2">
+                          <Label htmlFor={`plan-${type}`}>Stripe plan (bill customer)</Label>
+                          <Select id={`plan-${type}`} defaultValue="">
+                            <option value="">Select Stripe price</option>
+                            {catalog?.products.flatMap((product) =>
+                              product.prices.map((priceId) => {
+                                const label =
+                                  configCatalog?.prices.find((price) => price.id === priceId)?.label ?? priceId
+                                return (
+                                  <option key={`${product.id}-${priceId}`} value={priceId}>
+                                    {label}
+                                  </option>
+                                )
+                              }),
+                            )}
+                          </Select>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            onClick={() => {
+                              const select = document.getElementById(`plan-${type}`) as HTMLSelectElement | null
+                              handlePlanChange(type, select?.value ?? '')
+                            }}
+                            disabled={changingPlan}
+                          >
+                            {changingPlan ? 'Updating…' : 'Apply plan'}
+                          </Button>
+                          <Button variant="outline" onClick={() => handleResume(type)} disabled={resuming}>
+                            {resuming ? 'Resuming…' : 'Resume'}
+                          </Button>
+                          <Button variant="destructive" onClick={() => handleCancel(type)} disabled={cancelling}>
+                            {cancelling ? 'Cancelling…' : 'Cancel'}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {subscription ? (
-                          <>
-                            <Button
-                              onClick={() => {
-                                const select = document.getElementById(`plan-${type}`) as HTMLSelectElement | null
-                                handlePlanChange(type, select?.value ?? '')
-                              }}
-                              disabled={changingPlan}
-                            >
-                              {changingPlan ? 'Updating…' : 'Apply plan'}
-                            </Button>
-                            <Button variant="outline" onClick={() => handleResume(type)} disabled={resuming}>
-                              {resuming ? 'Resuming…' : 'Resume'}
-                            </Button>
-                            <Button variant="destructive" onClick={() => handleCancel(type)} disabled={cancelling}>
-                              {cancelling ? 'Cancelling…' : 'Cancel'}
-                            </Button>
-                          </>
-                        ) : (
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                        <div className="space-y-2">
+                          <Label htmlFor={`plan-${type}`}>Stripe plan (bill customer)</Label>
+                          <Select id={`plan-${type}`} defaultValue="">
+                            <option value="">Select Stripe price</option>
+                            {catalog?.products.flatMap((product) =>
+                              product.prices.map((priceId) => {
+                                const label =
+                                  configCatalog?.prices.find((price) => price.id === priceId)?.label ?? priceId
+                                return (
+                                  <option key={`${product.id}-${priceId}`} value={priceId}>
+                                    {label}
+                                  </option>
+                                )
+                              }),
+                            )}
+                          </Select>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             onClick={() => {
                               const select = document.getElementById(`plan-${type}`) as HTMLSelectElement | null
@@ -307,9 +337,40 @@ export default function UserDetailPage() {
                           >
                             {starting ? 'Starting…' : 'Start subscription'}
                           </Button>
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {!subscription && (
+                      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                        <div className="space-y-2">
+                          <Label htmlFor={`product-${type}`}>Grant access (no Stripe)</Label>
+                          <Select id={`product-${type}`} defaultValue="">
+                            <option value="">Select product</option>
+                            {catalog?.products.map((product) => (
+                              <option key={product.id} value={product.id}>
+                                {product.id}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const select = document.getElementById(`product-${type}`) as HTMLSelectElement | null
+                              handleGrant(type, select?.value ?? '')
+                            }}
+                            disabled={granting}
+                          >
+                            {granting ? 'Granting…' : 'Grant access'}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          This writes the product directly to the user record without Stripe.
+                        </p>
+                      </div>
+                    )}
                     {subscription?.cancelled && <Badge variant="warning">Cancel pending</Badge>}
                   </CardContent>
                 </Card>

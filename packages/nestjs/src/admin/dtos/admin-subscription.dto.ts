@@ -28,3 +28,14 @@ export class AdminSubscriptionActionDto {
   @IsString()
   subscriptionId?: string
 }
+
+export class AdminGrantSubscriptionDto {
+  @IsString()
+  userId: string
+
+  @IsString()
+  type: string
+
+  @IsString()
+  productId: string
+}

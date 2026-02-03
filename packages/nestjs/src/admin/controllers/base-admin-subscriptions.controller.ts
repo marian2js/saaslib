@@ -3,7 +3,11 @@ import { Request } from 'express'
 import { UpdateQuery } from 'mongoose'
 import { BaseSubscriptionService } from '../../subscriptions/services/base-subscription.service'
 import { BaseUser, BaseUserRole, BaseUserService } from '../../user'
-import { AdminChangeSubscriptionDto, AdminSubscriptionActionDto } from '../dtos/admin-subscription.dto'
+import {
+  AdminChangeSubscriptionDto,
+  AdminGrantSubscriptionDto,
+  AdminSubscriptionActionDto,
+} from '../dtos/admin-subscription.dto'
 
 @Injectable()
 export abstract class BaseAdminSubscriptionsController<U extends BaseUser> {
@@ -104,6 +108,58 @@ export abstract class BaseAdminSubscriptionsController<U extends BaseUser> {
       checkoutCancelUrl,
     )
     return { sessionId }
+  }
+
+  @Post('grant')
+  async grant(@Req() req: Request, @Body() body: AdminGrantSubscriptionDto) {
+    await this.requireAdmin(req)
+
+    if (!body.userId || body.userId === 'undefined' || body.userId === 'null') {
+      throw new BadRequestException('Invalid user id')
+    }
+    if (!body.type) {
+      throw new BadRequestException('Missing subscription type')
+    }
+    if (!body.productId) {
+      throw new BadRequestException('Missing product id')
+    }
+
+    let user: U | null
+    try {
+      user = await this.baseUserService.findOne({ _id: body.userId } as any)
+    } catch {
+      throw new BadRequestException('Invalid user id')
+    }
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    if (user.subscriptions?.has(body.type)) {
+      throw new BadRequestException('Subscription already exists for this user')
+    }
+    if (!this.baseSubscriptionService.hasSubscriptionType(body.type)) {
+      throw new NotFoundException('Subscription type not found')
+    }
+    if (!this.baseSubscriptionService.isProductAllowed(body.type, body.productId)) {
+      throw new NotFoundException('Product not found')
+    }
+
+    await this.baseUserService.updateOne(
+      { _id: user._id } as any,
+      {
+        $set: {
+          [`subscriptions.${body.type}.product`]: body.productId,
+        },
+        $unset: {
+          [`subscriptions.${body.type}.stripeSubscriptionId`]: 1,
+          [`subscriptions.${body.type}.periodEnd`]: 1,
+          [`subscriptions.${body.type}.nextProduct`]: 1,
+          [`subscriptions.${body.type}.cancelled`]: 1,
+          [`subscriptions.${body.type}.cancelledAt`]: 1,
+        },
+      } as UpdateQuery<U>,
+    )
+
+    return { ok: true }
   }
 
   @Post('cancel')
