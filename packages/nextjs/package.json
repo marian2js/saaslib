@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "tsc -w",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\"",
+    "test": "echo \"No tests specified\" && exit 0",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "prepare": "npm run build"
   },

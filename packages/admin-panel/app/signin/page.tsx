@@ -1,13 +1,14 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
 import { useSignInActionState } from '@saaslib/nextjs'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 
-export default function SignInPage() {
+function SignInForm() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const [state, signIn] = useSignInActionState({ redirectTo: '/admin' })
@@ -22,9 +23,7 @@ export default function SignInPage() {
         <CardContent className="space-y-5">
           {(error === 'forbidden' || state.error) && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error === 'forbidden'
-                ? 'You are signed in but do not have admin access.'
-                : state.error}
+              {error === 'forbidden' ? 'You are signed in but do not have admin access.' : state.error}
             </div>
           )}
           <form action={signIn} className="space-y-4">
@@ -47,5 +46,13 @@ export default function SignInPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   )
 }

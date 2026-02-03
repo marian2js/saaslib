@@ -10,15 +10,16 @@
     "dev": "NEXT_DISABLE_TURBOPACK=1 next dev",
     "build": "NEXT_DISABLE_TURBOPACK=1 next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.0.2",
+    "@saaslib/nextjs": "*",
+    "@stripe/stripe-js": "^5.5.0",
     "@types/node": "^20.11.30",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "@saaslib/nextjs": "*",
-    "@stripe/stripe-js": "^5.5.0",
-    "@radix-ui/react-slot": "^1.0.2",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,5 +34,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint-config-next": "^16.1.6"
+  }
 }

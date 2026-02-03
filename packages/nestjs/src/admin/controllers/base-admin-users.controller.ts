@@ -1,21 +1,12 @@
-import {
-  BadRequestException,
-  Get,
-  Injectable,
-  NotFoundException,
-  Param,
-  Patch,
-  Query,
-  Req,
-} from '@nestjs/common'
+import { BadRequestException, Get, Injectable, NotFoundException, Param, Patch, Query, Req } from '@nestjs/common'
 import { plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
 import { Request } from 'express'
 import { FilterQuery } from 'mongoose'
 import { EmailService } from '../../email/services/email.service'
-import { SecurityUtils } from '../../utils/security.utils'
 import { BaseUser, BaseUserRole } from '../../user/models/base-user.model'
 import { BaseUserService } from '../../user/services/base-user.service'
+import { SecurityUtils } from '../../utils/security.utils'
 import { AdminUpdateUserDto, AdminUserListQueryDto } from '../dtos/admin-user.dto'
 import { AdminCollectionsService } from '../services/admin-collections.service'
 
@@ -149,7 +140,7 @@ export abstract class BaseAdminUsersController<U extends BaseUser> {
     let user: U | null
     try {
       user = await this.baseUserService.findOne({ _id: id as any })
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid user id')
     }
     if (!user) {
@@ -173,7 +164,7 @@ export abstract class BaseAdminUsersController<U extends BaseUser> {
     let user: U | null
     try {
       user = await this.baseUserService.findOne({ _id: id as any })
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid user id')
     }
     if (!user) {

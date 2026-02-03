@@ -139,4 +139,3 @@ export async function resetPassword(code: string, newPassword: string) {
     body: JSON.stringify({ code, newPassword }),
   })
 }
-

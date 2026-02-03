@@ -1,16 +1,8 @@
-import {
-  BadRequestException,
-  Get,
-  Injectable,
-  NotFoundException,
-  Post,
-  Body,
-  Req,
-} from '@nestjs/common'
+import { BadRequestException, Body, Get, Injectable, NotFoundException, Post, Req } from '@nestjs/common'
 import { Request } from 'express'
-import { Types, UpdateQuery } from 'mongoose'
-import { BaseUser, BaseUserRole, BaseUserService } from '../../user'
+import { UpdateQuery } from 'mongoose'
 import { BaseSubscriptionService } from '../../subscriptions/services/base-subscription.service'
+import { BaseUser, BaseUserRole, BaseUserService } from '../../user'
 import { AdminChangeSubscriptionDto, AdminSubscriptionActionDto } from '../dtos/admin-subscription.dto'
 
 @Injectable()
@@ -43,16 +35,18 @@ export abstract class BaseAdminSubscriptionsController<U extends BaseUser> {
     let user: U | null
     try {
       user = await this.baseUserService.findOne({ _id: body.userId } as any)
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid user id')
     }
     if (!user) {
       throw new NotFoundException('User not found')
     }
 
-    const type = body.type ?? (body.subscriptionId
-      ? this.baseSubscriptionService.getUserSubscription(user, body.subscriptionId).type
-      : undefined)
+    const type =
+      body.type ??
+      (body.subscriptionId
+        ? this.baseSubscriptionService.getUserSubscription(user, body.subscriptionId).type
+        : undefined)
 
     if (!type) {
       throw new BadRequestException('Missing subscription type or subscriptionId')
@@ -85,7 +79,7 @@ export abstract class BaseAdminSubscriptionsController<U extends BaseUser> {
     let user: U | null
     try {
       user = await this.baseUserService.findOne({ _id: body.userId } as any)
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid user id')
     }
     if (!user) {
@@ -123,16 +117,18 @@ export abstract class BaseAdminSubscriptionsController<U extends BaseUser> {
     let user: U | null
     try {
       user = await this.baseUserService.findOne({ _id: body.userId } as any)
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid user id')
     }
     if (!user) {
       throw new NotFoundException('User not found')
     }
 
-    const type = body.type ?? (body.subscriptionId
-      ? this.baseSubscriptionService.getUserSubscription(user, body.subscriptionId).type
-      : undefined)
+    const type =
+      body.type ??
+      (body.subscriptionId
+        ? this.baseSubscriptionService.getUserSubscription(user, body.subscriptionId).type
+        : undefined)
 
     if (!type) {
       throw new BadRequestException('Missing subscription type or subscriptionId')
@@ -168,16 +164,18 @@ export abstract class BaseAdminSubscriptionsController<U extends BaseUser> {
     let user: U | null
     try {
       user = await this.baseUserService.findOne({ _id: body.userId } as any)
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid user id')
     }
     if (!user) {
       throw new NotFoundException('User not found')
     }
 
-    const type = body.type ?? (body.subscriptionId
-      ? this.baseSubscriptionService.getUserSubscription(user, body.subscriptionId).type
-      : undefined)
+    const type =
+      body.type ??
+      (body.subscriptionId
+        ? this.baseSubscriptionService.getUserSubscription(user, body.subscriptionId).type
+        : undefined)
 
     if (!type) {
       throw new BadRequestException('Missing subscription type or subscriptionId')
