@@ -187,6 +187,45 @@ export class BaseSubscriptionService<U extends BaseUser> {
     )
   }
 
+  getSubscriptionTypes(): string[] {
+    return Object.keys(this.options.subscriptions ?? {})
+  }
+
+  hasSubscriptionType(type: string): boolean {
+    return !!this.options.subscriptions?.[type]
+  }
+
+  isPriceAllowed(type: string, priceId: string): boolean {
+    const config = this.options.subscriptions?.[type]
+    if (!config) return false
+    return config.products.some((product) => product.prices.includes(priceId))
+  }
+
+  getCheckoutUrls(type: string): { checkoutSuccessUrl: string; checkoutCancelUrl: string; billingReturnUrl: string } {
+    const config = this.options.subscriptions?.[type]
+    if (!config) {
+      throw new NotFoundException('Subscription type not found')
+    }
+    return {
+      checkoutSuccessUrl: config.checkoutSuccessUrl,
+      checkoutCancelUrl: config.checkoutCancelUrl,
+      billingReturnUrl: config.billingReturnUrl,
+    }
+  }
+
+  getSubscriptionCatalog(): Array<{ type: string; products: Array<{ id: string; prices: string[] }> }> {
+    if (!this.options.subscriptions) {
+      return []
+    }
+    return Object.entries(this.options.subscriptions).map(([type, config]) => ({
+      type,
+      products: config.products.map((product) => ({
+        id: product.id,
+        prices: product.prices,
+      })),
+    }))
+  }
+
   getUserSubscription(user: U, subscriptionId: string): { userSubscription: UserSubscription; type: string } {
     const [type, userSubscription] =
       Array.from(user.subscriptions).find(([_, value]) => value.stripeSubscriptionId === subscriptionId) ?? []

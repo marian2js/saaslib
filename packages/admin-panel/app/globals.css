@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: 32 50% 98%;
+  --foreground: 222 22% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 22% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 22% 16%;
+  --primary: 222 70% 45%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 30 35% 92%;
+  --secondary-foreground: 222 22% 16%;
+  --muted: 210 20% 95%;
+  --muted-foreground: 216 12% 42%;
+  --accent: 150 45% 45%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 72% 52%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 210 22% 90%;
+  --input: 210 22% 90%;
+  --ring: 222 70% 45%;
+  --radius: 18px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    background-image:
+      radial-gradient(600px circle at 6% -10%, rgba(59, 130, 246, 0.12), transparent 65%),
+      radial-gradient(500px circle at 92% -20%, rgba(16, 185, 129, 0.16), transparent 60%),
+      radial-gradient(500px circle at 20% 90%, rgba(251, 191, 36, 0.18), transparent 55%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), serif;
+  }
+}
+
+.app-shell {
+  @apply min-h-screen grid lg:grid-cols-[280px_1fr];
+}
+
+.app-sidebar {
+  @apply bg-card/90 backdrop-blur-xl border-r border-border p-6 flex flex-col gap-6;
+}
+
+.app-content {
+  @apply px-6 py-10 sm:px-10 lg:px-12;
+}
+
+.section-title {
+  @apply text-3xl font-semibold tracking-tight;
+}
+
+.section-subtitle {
+  @apply text-muted-foreground mt-2;
+}
+
+.card-grid {
+  @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-3;
+}
+
+.table-wrapper {
+  @apply rounded-2xl border border-border bg-card/80 shadow-soft overflow-hidden;
+}

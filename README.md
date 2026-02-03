@@ -8,6 +8,7 @@ A monorepo for SaaSlib: a NestJS backend toolkit with an optional Next.js client
 | --- | --- | --- |
 | `@saaslib/nestjs` | Core NestJS + MongoDB building blocks for SaaS backends | `0.1.2` |
 | `@saaslib/nextjs` | Next.js hooks, server utilities, and middleware that pair with `@saaslib/nestjs` | `0.1.5` |
+| `@saaslib/admin-panel` | Next.js admin console for managing users, collections, and subscriptions | `0.1.0` |
 
 ## Requirements
 

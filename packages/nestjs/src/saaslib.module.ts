@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
 import { ScheduleModule } from '@nestjs/schedule'
 import * as cookieParser from 'cookie-parser'
-import { EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
+import { AdminCollectionsService, EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
 import { EnvScheduleExplorer } from './common/env-schedule/env-schedule.explorer'
 import { SaaslibOptions } from './types/saaslib-options'
 import { LinkedInStrategy } from './user/auth/strategies/linkedin.strategy'
@@ -49,9 +49,10 @@ export class SaaslibModule {
 
         // Utils
         EnvScheduleExplorer,
+        AdminCollectionsService,
       ],
       controllers: [],
-      exports: ['SL_OPTIONS', EmailService, UserProviderService, StorageService],
+      exports: ['SL_OPTIONS', EmailService, UserProviderService, StorageService, AdminCollectionsService],
     }
   }
 

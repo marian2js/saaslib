@@ -1,1 +1,6 @@
 export * from './guards/base-admin-role.guard'
+export * from './controllers/base-admin-users.controller'
+export * from './controllers/base-admin-subscriptions.controller'
+export * from './dtos/admin-user.dto'
+export * from './dtos/admin-subscription.dto'
+export * from './services/admin-collections.service'

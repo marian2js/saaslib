@@ -1,0 +1,37 @@
+{
+  "name": "@saaslib/admin-panel",
+  "version": "0.1.1",
+  "private": true,
+  "bin": {
+    "saaslib-admin-panel": "bin/saaslib-admin-panel.js"
+  },
+  "description": "Admin panel for Saaslib apps",
+  "scripts": {
+    "dev": "NEXT_DISABLE_TURBOPACK=1 next dev",
+    "build": "NEXT_DISABLE_TURBOPACK=1 next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "@saaslib/nextjs": "*",
+    "@stripe/stripe-js": "^5.5.0",
+    "@radix-ui/react-slot": "^1.0.2",
+    "autoprefixer": "^10.4.20",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.468.0",
+    "next": "^16.1.1",
+    "postcss": "^8.4.49",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {}
+}

@@ -222,6 +222,16 @@ Note: the Stripe webhook expects a raw request body. Configure your NestJS app t
 
 `BaseAdminRoleGuard` to restrict routes to `BaseUserRole.Admin`.
 
+### Admin controllers
+
+Base controllers to expose admin-only endpoints (users + subscriptions):
+
+- `BaseAdminUsersController` (`/admin/users`)
+- `BaseAdminSubscriptionsController` (`/admin/subscriptions`)
+
+These controllers enforce admin access via `BaseUserRole.Admin` and are designed to be extended in your app.
+Attach your own guard (for example a custom admin guard or API key guard) on the subclass.
+
 ## Extending base classes
 
 ### User service
