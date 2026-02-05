@@ -7,6 +7,7 @@ import * as cookieParser from 'cookie-parser'
 import { AdminCollectionsService, EmailService, GoogleStrategy, HttpExceptionFilter, UserGuard } from '.'
 import { EnvScheduleExplorer } from './common/env-schedule/env-schedule.explorer'
 import { SaaslibOptions } from './types/saaslib-options'
+import { GithubStrategy } from './user/auth/strategies/github.strategy'
 import { LinkedInStrategy } from './user/auth/strategies/linkedin.strategy'
 import { UserProvider, UserProviderSchema } from './user/models/user-provider.model'
 import { UserProviderService } from './user/services/user-provider.service'
@@ -46,6 +47,7 @@ export class SaaslibModule {
         // Auth Strategies
         ...(process.env.GOOGLE_CLIENT_ID ? [GoogleStrategy] : []),
         ...(process.env.LINKEDIN_CLIENT_ID ? [LinkedInStrategy] : []),
+        ...(process.env.GITHUB_CLIENT_ID ? [GithubStrategy] : []),
 
         // Utils
         EnvScheduleExplorer,

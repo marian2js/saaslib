@@ -26,6 +26,7 @@ import {
   VerifyEmailDto,
 } from '../dtos/base-auth.dto'
 import { LinkedInOauth2Guard } from '../guards'
+import { GithubOauth2Guard } from '../guards/github-oauth2.guard'
 import { GoogleOauth2Guard } from '../guards/google-oauth2.guard'
 import { UserGuard } from '../guards/user.guard'
 import { BaseAuthService } from '../services/base-auth.service'
@@ -199,6 +200,16 @@ export class BaseAuthController {
   @Get('linkedin/callback')
   @UseGuards(LinkedInOauth2Guard)
   async linkedinAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    return await this.ssoAuthRedirect(req, res)
+  }
+
+  @Get('github')
+  @UseGuards(GithubOauth2Guard)
+  githubAuth() {}
+
+  @Get('github/callback')
+  @UseGuards(GithubOauth2Guard)
+  async githubAuthRedirect(@Req() req: Request, @Res() res: Response) {
     return await this.ssoAuthRedirect(req, res)
   }
 

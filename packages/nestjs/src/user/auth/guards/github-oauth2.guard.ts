@@ -2,7 +2,7 @@ import { ExecutionContext, Injectable, ServiceUnavailableException } from '@nest
 import { AuthGuard } from '@nestjs/passport'
 
 @Injectable()
-export class GoogleOauth2Guard extends AuthGuard('google') {
+export class GithubOauth2Guard extends AuthGuard('github') {
   constructor() {
     super({
       accessType: 'offline',
@@ -10,9 +10,9 @@ export class GoogleOauth2Guard extends AuthGuard('google') {
   }
 
   canActivate(context: ExecutionContext): any {
-    if (!process.env.GOOGLE_CLIENT_ID) {
+    if (!process.env.GITHUB_CLIENT_ID) {
       throw new ServiceUnavailableException(
-        'Google Authentication is not configured. Please set GOOGLE_CLIENT_ID in your environment.',
+        'GitHub Authentication is not configured. Please set GITHUB_CLIENT_ID in your environment.',
       )
     }
     return super.canActivate(context)
