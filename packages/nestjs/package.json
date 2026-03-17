@@ -55,7 +55,7 @@
     "class-validator": "^0.14.3",
     "cookie-parser": "^1.4.7",
     "handlebars": "^4.7.8",
-    "mongoose": "^8.5.5",
+    "mongoose": "^8.9.5",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
